@@ -6,7 +6,10 @@ SCREEN_HEIGHT = 480
 SCREEN_TITLE = "Plateforme 2D avec map fixe"
 
 TILE_SCALING = 1.48
-MAP_FILE = ".\..\Tileset\oak_woods_v1.0\First_map_rescale2.tmx"   # fichier créé avec Tiled
+
+# Les différentes maps de notre jeu 
+MAP_FILE = ".\..\Tileset\oak_woods_v1.0\First_Map.tmx" # N°1
+#MAP_FILE = ".\..\Tileset\Dungeon Tile Set\Last_Map.tmx" # N°3
 
 
 class MyGame(arcade.Window):
