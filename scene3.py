@@ -69,10 +69,7 @@ class Fireball(arcade.Sprite):
             self.velocity_y = (dy / distance) * FIREBALL_SPEED
             
             # Calculer l'angle pour orienter le haut de l'image vers la direction
-            # atan2 donne l'angle en radians, on le convertit en degrés
             angle_rad = math.atan2(dy, dx)
-            # On ajoute 90° car l'image pointe vers le haut par défaut (0°)
-            # et on veut qu'elle pointe dans la direction du mouvement
             self.angle = math.degrees(angle_rad) + 90
     
     def update_animation(self, delta_time):
@@ -179,7 +176,6 @@ class Scene:
         # Name of the next scene module to load when player dies (optional)
         self.next_scene_module = None
 
-
     def load_frames(self, folder):
         textures = []
         if not os.path.isdir(folder):
@@ -269,71 +265,19 @@ class Scene:
             self.attack_pending = True
             self.attack_hit_timer = 0
     
-    def end_Timer (self,start_time):
+    def end_Timer(self, start_time):
+        """Calcule et affiche le temps total de jeu"""
         global exec_time
         end_time = time.perf_counter()
-        print("Start_Time : ",start_time)
-        print("End_time : ",end_time)
+        print("Start_Time : ", start_time)
+        print("End_time : ", end_time)
         exec_time = end_time - start_time
-        exec_time = round(exec_time,2)
+        exec_time = round(exec_time, 2)
         exec_time_min = exec_time / 60
-        exec_time_min = round(exec_time_min,2)
-        print("Temps total de jeu : ",exec_time_min,"min")
-        print("Temps total de jeu : ",exec_time,"sec")
+        exec_time_min = round(exec_time_min, 2)
+        print("Temps total de jeu : ", exec_time_min, "min")
+        print("Temps total de jeu : ", exec_time, "sec")
 
-    def check_follower_charge_hit(self):
-        """Vérifie si la charge du héros touche le boss"""
-        if not self.charge_hit_checked and self.follower_charging:
-            distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
-            
-            if distance <= CHARGE_DISTANCE:
-                self.charge_hit_checked = True
-                
-                # Dégâts doublés pendant la charge
-                self.player_health -= self.follower_attack_damage * 2
-                if self.player_health <= 0:
-                    try:
-                        self.player_sprite.kill()
-                        print("Fin du jeu")
-                        print("check_follower_charge_hit")
-                        self.end_Timer(start_time)
-                        arcade.exit()
-                    except Exception:
-                        pass
-                
-                # Arrêter la charge après impact
-                self.follower_charging = False
-                self.follower_charge_timer = 0
-                self.follower_sprite.change_x = 0
-                # Remettre les textures par défaut après impact
-                self.follower_sprite.textures = self.follower_idle_textures
-                if self.follower_idle_textures:
-                    self.follower_sprite.texture = self.follower_idle_textures[0]
-
-    def start_follower_charge(self):
-        """Démarre l'attaque de charge du héros"""
-        if not self.follower_hurt and not self.follower_charging and self.hero_health > 0:
-            # Arrêter l'attaque en cours pour lancer la charge
-            if self.follower_attacking:
-                self.follower_attacking = False
-                self.follower_attack_frame = 0
-                self.follower_attack_timer = 0
-            
-            self.follower_charging = True
-            self.follower_charge_timer = 0
-            self.charge_hit_checked = False
-            self.follower_frame = 0
-            
-            # Changer vers les textures d'attaque pour la charge (attack2)
-            self.follower_sprite.textures = self.follower_attack_textures
-            if self.follower_attack_textures:
-                self.follower_sprite.texture = self.follower_attack_textures[0]
-            
-            # Déterminer la direction de la charge (vers le boss)
-            if self.player_sprite.center_x > self.follower_sprite.center_x:
-                self.follower_sprite.change_x = FOLLOWER_CHARGE_SPEED
-            else:
-                self.follower_sprite.change_x = -FOLLOWER_CHARGE_SPEED
     def create_fireball(self):
         """Crée une nouvelle fireball dirigée vers le boss"""
         if self.fireball_shoot_textures and self.hero_health > 0:
@@ -345,13 +289,11 @@ class Scene:
             
             # Position cible (quart bas du boss)
             target_x = self.player_sprite.center_x
-            # Calculer la position du quart bas : centre - (3/8 de la hauteur)
             target_y = self.player_sprite.center_y - (self.player_sprite.height * 0.375)
             
             # Configurer la trajectoire
             fireball.setup_trajectory(start_x, start_y, target_x, target_y)
             fireball.scale = 3.0
-
             
             # Ajouter à la liste
             self.fireball_list.append(fireball)
@@ -375,11 +317,14 @@ class Scene:
             arcade.play_sound(self.follower_attack_sound)
 
     def finish_follower_attack(self):
-        # Dégâts normaux d'attaque
+        """Termine l'attaque du follower et inflige des dégâts"""
         self.player_health -= self.follower_attack_damage
         if self.player_health <= 0:
             try:
                 self.player_sprite.kill()
+                print("Fin du jeu - Boss vaincu par le héros")
+                self.end_Timer(start_time)
+                arcade.exit()
             except Exception:
                 pass
         self.follower_attacking = False
@@ -451,6 +396,9 @@ class Scene:
                     if self.player_health <= 0:
                         try:
                             self.player_sprite.kill()
+                            print("Fin du jeu - Boss vaincu par fireball")
+                            self.end_Timer(start_time)
+                            arcade.exit()
                         except Exception:
                             pass
                 
@@ -517,6 +465,9 @@ class Scene:
                 if self.hero_health <= 0:
                     try:
                         self.follower_sprite.kill()
+                        print("Fin du jeu - Héros vaincu")
+                        self.end_Timer(start_time)
+                        arcade.exit()
                     except Exception:
                         pass
 
@@ -599,38 +550,6 @@ class Scene:
         else:
             self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
-
-    def on_key_press(self, key, modifiers):
-        # Le boss ne peut pas bouger si le héros charge
-        if self.follower_charging:
-            return
-        self.follower_attacking = True
-        self.follower_attack_frame = 0
-        self.follower_attack_timer = 0
-        self.follower_sprite.change_x = 0
-        if self.follower_attack_textures:
-            self.follower_sprite.textures = self.follower_attack_textures
-            self.follower_sprite.texture = self.follower_attack_textures[0]
-        if self.follower_attack_sound:
-            arcade.play_sound(self.follower_attack_sound)
-
-    def finish_follower_attack(self):
-        self.player_health -= self.follower_attack_damage
-        if self.player_health <= 0:
-            try:
-                self.player_sprite.kill()
-                print("Fin du jeu")
-                self.end_Timer(start_time)
-                arcade.exit()
-            except Exception:
-                pass
-        self.follower_attacking = False
-        self.follower_attack_frame = 0
-        self.follower_attack_timer = 0
-        self.follower_sprite.change_x = 0
-        self.follower_sprite.textures = self.follower_idle_textures
-        if self.follower_idle_textures:
-            self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
