@@ -236,7 +236,7 @@ class Scene:
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
-        self.player_sprite.center_x = 100
+        self.player_sprite.center_x = 700
         self.player_sprite.center_y = 600
         self.player_sprite.scale = 1.4
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
@@ -246,7 +246,7 @@ class Scene:
         self.follower_sprite.textures = self.follower_idle_textures
         if self.follower_idle_textures:
             self.follower_sprite.texture = self.follower_idle_textures[0]
-        self.follower_sprite.center_x = 700
+        self.follower_sprite.center_x = 100
         self.follower_sprite.center_y = 600
         self.follower_sprite.scale = 2.0
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
