@@ -8,8 +8,8 @@ SCREEN_TITLE = "Plateforme 2D avec map fixe"
 
 TILE_SCALING = 1.48
 
-MAP_FILE = ".\\..\\Tileset\\Maps\\First_Map.tmx"  # N°3
-#MAP_FILE = ".\\..\\Tileset\\Maps\\Second_Map.tmx"
+#MAP_FILE = ".\\..\\Tileset\\Maps\\First_Map.tmx"  # N°3
+MAP_FILE = ".\\..\\Tileset\\Maps\\Second_Map.tmx"
 #MAP_FILE = ".\\..\\Tileset\\Maps\\Last_Map.tmx"
 
 PLAYER_MOVEMENT_SPEED = 5
@@ -21,9 +21,6 @@ WALK_FOLDER = ".\\..\\sprites\\Monster_1\\walk"
 
 FRAME_TIME = 0.12
 
-MAP_FILE = "./../Tileset/Maps/Last_Map.tmx" # N°3
-MAP_FILE = "./../Tileset/Maps/Second_Map.tmx" # N°2
-MAP_FILE = "./../Tileset/Maps/test.tmx" # N°1
 print(MAP_FILE)
 
 class MyGame(arcade.Window):
