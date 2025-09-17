@@ -22,6 +22,7 @@ BACK_IDLE = f"{BUTTON_FOLDER}/back_idle.png"
 BACK_HOVER = f"{BUTTON_FOLDER}/back_hover.png"
 BACK_PRESSED = f"{BUTTON_FOLDER}/back_pressed.png"
 OPTIONS_BACKGROUND = f"{BUTTON_FOLDER}/options_bg.png"
+KEYMAPS = f"assets/keymaps.png"
 
 
 class MenuView(arcade.View):
@@ -32,7 +33,7 @@ class MenuView(arcade.View):
         self.manager = arcade.gui.UIManager()
 
         self.backgrounds = []
-        self.backgrounds.append(arcade.load_texture("assets/backgrounds/bg_1.png"))
+        # self.backgrounds.append(arcade.load_texture("assets/backgrounds/bg_1.png"))
         self.backgrounds.append(arcade.load_texture("assets/backgrounds/bg_2.png"))
 
         self.rnd_bg_index = random.randint(0, len(self.backgrounds)-1)
@@ -48,6 +49,8 @@ class MenuView(arcade.View):
         options_hover = arcade.load_texture(OPTIONS_HOVER)
         options_pressed = arcade.load_texture(OPTIONS_PRESSED)
         btn_w, btn_h = start_idle.width*0.7, start_idle.height*0.7
+
+        self.keymaps = arcade.load_texture(KEYMAPS)
 
         # boutons (Start / Exit)
         self.start_button = arcade.gui.UITextureButton(
@@ -94,7 +97,7 @@ class MenuView(arcade.View):
 
         # ancrage au centre
         self.root = self.manager.add(arcade.gui.UIAnchorLayout())
-        self.root.add(self.grid, anchor_x="center_x", anchor_y="center_y")
+        self.root.add(self.grid, anchor_x="center_x", anchor_y="center_y", align_y=-50)
 
     def on_show_view(self):
         arcade.set_background_color(arcade.color.DARK_BLUE_GRAY)
@@ -108,6 +111,10 @@ class MenuView(arcade.View):
         arcade.draw_texture_rect(
             self.backgrounds[self.rnd_bg_index],
             arcade.LBWH(0, 0, self.window.width, self.window.height),
+        )
+        arcade.draw_texture_rect(
+            self.keymaps,
+            arcade.LBWH(20, 20, 200, 200),
         )
         self.manager.draw()
 
