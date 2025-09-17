@@ -16,8 +16,8 @@ PLAYER_MOVEMENT_SPEED = 5
 PLAYER_JUMP_SPEED = 15
 GRAVITY = 1
 
-IDLE_FOLDER = ".\\..\\sprites\\Monster_1\\idle"
-WALK_FOLDER = ".\\..\\sprites\\Monster_1\\walk"
+IDLE_FOLDER = ".\\..\\assets\\sprites\\Monster_1\\idle"
+WALK_FOLDER = ".\\..\\assets\\sprites\\Monster_1\\walk"
 
 FRAME_TIME = 0.12
 
