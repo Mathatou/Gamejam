@@ -5,7 +5,6 @@ Arcade 3.3.2 compatible.
 
 import arcade
 import arcade.gui
-from main import MainView
 
 # --- chemins des sprites ---
 BUTTON_FOLDER = "assets/sprites/Button"
@@ -60,7 +59,8 @@ class MenuView(arcade.View):
         # actions
         @self.start_button.event("on_click")
         def _start(_e):
-            game_view = MainView(self.window)
+            from main import MainView as _MainView
+            game_view = _MainView(self.window)
             game_view.setup_scene('scene1')
             game_view.start_Timer()
             self.window.show_view(game_view)
