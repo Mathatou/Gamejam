@@ -2,6 +2,7 @@
 Menu with textured buttons (idle/hover/pressed) + pixel text overlay.
 Arcade 3.3.2 compatible.
 """
+import random
 
 import arcade
 import arcade.gui
@@ -29,6 +30,12 @@ class MenuView(arcade.View):
 
         # UI manager
         self.manager = arcade.gui.UIManager()
+
+        self.backgrounds = []
+        self.backgrounds.append(arcade.load_texture("assets/backgrounds/bg_1.png"))
+        self.backgrounds.append(arcade.load_texture("assets/backgrounds/bg_2.png"))
+
+        self.rnd_bg_index = random.randint(0, len(self.backgrounds)-1)
 
         # textures bouton
         start_idle = arcade.load_texture(START_IDLE)
@@ -98,6 +105,10 @@ class MenuView(arcade.View):
 
     def on_draw(self):
         self.clear()
+        arcade.draw_texture_rect(
+            self.backgrounds[self.rnd_bg_index],
+            arcade.LBWH(0, 0, self.window.width, self.window.height),
+        )
         self.manager.draw()
 
 class SubMenu(arcade.gui.UIMouseFilterMixin, arcade.gui.UIAnchorLayout):
