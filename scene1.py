@@ -1,20 +1,19 @@
 #--- scene2.py ---
 import arcade
 import os
-import importlib
 
 # Scene module for graphics, assets and logic
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
 
 # Paths used by this scene (adjust per scene file)
-WALK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/02_demon_walk"
-ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/03_demon_cleave"
-FOLLOWER_WALK_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/02_walk"
-FOLLOWER_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/01_idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/09_3_atk"
+WALK_FRAMES_FOLDER = "assets/sprites/Monster_1/walk"
+ATTACK_FRAMES_FOLDER = "assets/sprites/Monster_1/attack"
+FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
+FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack"
 TILE_SCALING = 1.48
-MAP_FILE = "/home/kokou/gameJam/Tileset/oak_woods_v1.0/Second_Map.tmx"
+MAP_FILE = "./Tileset/Maps/First_map.tmx"
 FOLLOWER_SPEED = 1.5
 
 class Scene:
@@ -33,6 +32,7 @@ class Scene:
         self.wall_list = arcade.SpriteList()
         self.player_sprite = None
         self.follower_sprite = None
+        self.tile_map = None
 
         # Physics
         self.physics_engine = None
@@ -107,8 +107,9 @@ class Scene:
 
         # Tilemap / ground
         try:
-            tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
-            self.wall_list = tile_map.sprite_lists.get('Platforms') or tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
+            self.tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
+            print(MAP_FILE)
+            self.wall_list = self.tile_map.sprite_lists.get('Platforms') or self.tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
         except Exception:
             self.wall_list = arcade.SpriteList()
 
@@ -158,6 +159,10 @@ class Scene:
                     SCREEN_HEIGHT
                 )
             )
+        if self.tile_map:
+            for layer in self.tile_map.sprite_lists.values():
+                layer.draw()
+
         # Draw layers
         self.wall_list.draw()
         self.player_list.draw()

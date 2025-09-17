@@ -1,21 +1,20 @@
-
 #--- main.py ---
-import arcade
 import importlib
-from scene2 import Scene
+from MenuView import *
+
 # --- Constantes ---
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-SCREEN_TITLE = "Plateforme 2D avec Boss et Follower animé"
+SCREEN_TITLE = "Hold'em!"
 
-class MainWindow(arcade.Window):
-    def __init__(self, width=800, height=600, title="Main"):
-        super().__init__(width, height, title)
+class MainView(arcade.View):
+    def __init__(self, window):
+        super().__init__(window)
         self.current_scene = None
         self.scene_module = None
         self.background_player = None
 
-    def setup_scene(self, scene_module_name='scene2'):
+    def setup_scene(self, scene_module_name='scene1'):
         try:
             mod = importlib.import_module(scene_module_name)
             SceneClass = getattr(mod, 'Scene', None)
@@ -58,6 +57,7 @@ class MainWindow(arcade.Window):
             self.current_scene.on_key_release(key, modifiers)
 
 if __name__ == '__main__':
-    window = MainWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Game with scenes")
-    window.setup_scene('scene2')
+    game = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    main_view = MenuView()
+    game.show_view(main_view)
     arcade.run()
