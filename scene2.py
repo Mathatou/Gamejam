@@ -8,13 +8,13 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 # Paths used by this scene (adjust per scene file)
-WALK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/02_demon_walk"
-ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/03_demon_cleave"
-FOLLOWER_WALK_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/02_walk"
-FOLLOWER_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/01_idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/09_3_atk"
+WALK_FRAMES_FOLDER = "sprites/Monster_2/walk"
+ATTACK_FRAMES_FOLDER = "sprites/Monster_2/attack"
+FOLLOWER_WALK_FOLDER = "sprites/Hero/walk1"
+FOLLOWER_FRAMES_FOLDER = "sprites/Hero/idle"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "sprites/Hero/attack"
 TILE_SCALING = 1.48
-MAP_FILE = "/home/kokou/gameJam/Tileset/oak_woods_v1.0/Second_Map.tmx"
+MAP_FILE = "Tileset/oak_woods_v1.0/Second_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
 class Scene:

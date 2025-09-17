@@ -15,7 +15,7 @@ class MainWindow(arcade.Window):
         self.scene_module = None
         self.background_player = None
 
-    def setup_scene(self, scene_module_name='scene2'):
+    def setup_scene(self, scene_module_name='scene1'):
         try:
             mod = importlib.import_module(scene_module_name)
             SceneClass = getattr(mod, 'Scene', None)
@@ -59,5 +59,5 @@ class MainWindow(arcade.Window):
 
 if __name__ == '__main__':
     window = MainWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Game with scenes")
-    window.setup_scene('scene2')
+    window.setup_scene('scene1')
     arcade.run()
