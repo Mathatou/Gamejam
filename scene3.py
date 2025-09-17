@@ -213,7 +213,7 @@ class Scene:
         dx = self.player_sprite.center_x - self.follower_sprite.center_x
         dy = self.player_sprite.center_y - self.follower_sprite.center_y
         min_x = 50
-        min_y = 10
+        min_y = 150
         if self.player_health > 0 and not self.follower_attacking:
             if abs(dx) > min_x:
                 self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
@@ -271,6 +271,8 @@ class Scene:
         if self.player_health <= 0:
             try:
                 self.player_sprite.kill()
+                print("Fin du jeu")
+                arcade.exit()
             except Exception:
                 pass
         self.follower_attacking = False
