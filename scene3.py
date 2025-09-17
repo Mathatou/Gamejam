@@ -70,6 +70,7 @@ class Scene:
         self.follower_attack_timer = 0
 
         # Health and damage
+        self.player_health = 100
         self.player_max_health = self.player_health
         self.hero_health = 100
         self.hero_max_health = self.hero_health
