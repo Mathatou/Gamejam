@@ -5,6 +5,7 @@ import time
 from main import MainView
 from main import start_time
 
+import random
 
 # Scene module for graphics, assets and logic
 SCREEN_WIDTH = 640
@@ -15,10 +16,18 @@ WALK_FRAMES_FOLDER = "assets/sprites/Demon/walk"
 ATTACK_FRAMES_FOLDER = "assets/sprites/Demon/attack"
 FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
+
+# Constantes pour le système de propulsion et charge
+KNOCKBACK_FORCE = 10
+KNOCKBACK_DISTANCE = 270
+FOLLOWER_CHARGE_SPEED = 3
+CHARGE_COOLDOWN_MIN = 3.0
+CHARGE_COOLDOWN_MAX = 3.0
+CHARGE_DISTANCE = 200
 
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
@@ -37,6 +46,7 @@ class Scene:
         self.player_sprite = None
         self.follower_sprite = None
         self.tile_map = None
+
         # Physics
         self.physics_engine = None
         self.follower_physics = None
@@ -60,7 +70,7 @@ class Scene:
         self.follower_attack_timer = 0
 
         # Health and damage
-        self.player_health = 10
+        self.player_health = 100
         self.player_max_health = self.player_health
         self.hero_health = 100
         self.hero_max_health = self.hero_health
@@ -68,8 +78,26 @@ class Scene:
         self.follower_attack_damage = 1
         self.player_dealt_damage = False
 
+        # Système de charge du héros
+        self.follower_charging = False
+        self.follower_charge_timer = 0
+        self.next_charge_time = random.uniform(CHARGE_COOLDOWN_MIN, CHARGE_COOLDOWN_MAX)
+        self.charge_cooldown_timer = 0
+        self.charge_hit_checked = False
+
+        # Système de propulsion du boss
+        self.attack_hit_delay = 0.2
+        self.attack_hit_timer = 0
+        self.attack_pending = False
+        self.follower_hurt = False
+        self.follower_hurt_timer = 0
+
+        # Suivi des touches pressées pour éviter les conflits
+        self.left_pressed = False
+        self.right_pressed = False
+
         # Scene name
-        self.name=3
+        self.name = 3
         # Name of the next scene module to load when player dies (optional)
         self.next_scene_module = None
 
@@ -144,7 +172,7 @@ class Scene:
             self.player_sprite.texture = self.walk_textures[0]
         self.player_sprite.center_x = 100
         self.player_sprite.center_y = 600
-        self.player_sprite.scale = 2.0
+        self.player_sprite.scale = 1.5
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
         self.player_list.append(self.player_sprite)
 
@@ -154,13 +182,104 @@ class Scene:
             self.follower_sprite.texture = self.follower_idle_textures[0]
         self.follower_sprite.center_x = 700
         self.follower_sprite.center_y = 600
-        self.follower_sprite.scale = 2.0
+        self.follower_sprite.scale = 2
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
         self.player_list.append(self.follower_sprite)
 
         # Physics
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.wall_list, gravity_constant=1)
         self.follower_physics = arcade.PhysicsEnginePlatformer(self.follower_sprite, self.wall_list, gravity_constant=1)
+
+    def check_boss_attack_hit(self):
+        """Vérifie si l'attaque du boss va toucher le héros (avec délai)"""
+        distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
+        
+        # Le boss ne peut pas propulser le héros s'il est en train de charger
+        if distance <= KNOCKBACK_DISTANCE and not self.follower_hurt and not self.attack_pending and not self.follower_charging:
+            self.attack_pending = True
+            self.attack_hit_timer = 0
+
+    def check_follower_charge_hit(self):
+        """Vérifie si la charge du héros touche le boss"""
+        if not self.charge_hit_checked and self.follower_charging:
+            distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
+            
+            if distance <= CHARGE_DISTANCE:
+                self.charge_hit_checked = True
+                
+                # Dégâts doublés pendant la charge
+                self.player_health -= self.follower_attack_damage * 2
+                if self.player_health <= 0:
+                    try:
+                        self.player_sprite.kill()
+                    except Exception:
+                        pass
+                
+                # Arrêter la charge après impact
+                self.follower_charging = False
+                self.follower_charge_timer = 0
+                self.follower_sprite.change_x = 0
+                # Remettre les textures par défaut après impact
+                self.follower_sprite.textures = self.follower_idle_textures
+                if self.follower_idle_textures:
+                    self.follower_sprite.texture = self.follower_idle_textures[0]
+
+    def start_follower_charge(self):
+        """Démarre l'attaque de charge du héros"""
+        if not self.follower_hurt and not self.follower_charging and self.hero_health > 0:
+            # Arrêter l'attaque en cours pour lancer la charge
+            if self.follower_attacking:
+                self.follower_attacking = False
+                self.follower_attack_frame = 0
+                self.follower_attack_timer = 0
+            
+            self.follower_charging = True
+            self.follower_charge_timer = 0
+            self.charge_hit_checked = False
+            self.follower_frame = 0
+            
+            # Changer vers les textures d'attaque pour la charge (attack2)
+            self.follower_sprite.textures = self.follower_attack_textures
+            if self.follower_attack_textures:
+                self.follower_sprite.texture = self.follower_attack_textures[0]
+            
+            # Déterminer la direction de la charge (vers le boss)
+            if self.player_sprite.center_x > self.follower_sprite.center_x:
+                self.follower_sprite.change_x = FOLLOWER_CHARGE_SPEED
+            else:
+                self.follower_sprite.change_x = -FOLLOWER_CHARGE_SPEED
+
+    def start_follower_attack(self):
+        if self.player_health <= 0:
+            self.follower_attacking = False
+            self.follower_sprite.change_x = 0
+            return
+        self.follower_attacking = True
+        self.follower_attack_frame = 0
+        self.follower_attack_timer = 0
+        self.follower_sprite.change_x = 0
+        if self.follower_attack_textures:
+            self.follower_sprite.textures = self.follower_attack_textures
+            self.follower_sprite.texture = self.follower_attack_textures[0]
+        if self.follower_attack_sound:
+            arcade.play_sound(self.follower_attack_sound)
+
+    def finish_follower_attack(self):
+        if not self.follower_charging:  # Pas de dégâts pendant la charge
+            self.player_health -= self.follower_attack_damage
+            if self.player_health <= 0:
+                try:
+                    self.player_sprite.kill()
+                except Exception:
+                    pass
+        self.follower_attacking = False
+        self.follower_attack_frame = 0
+        self.follower_attack_timer = 0
+        if not self.follower_hurt:
+            self.follower_sprite.change_x = 0
+        self.follower_sprite.textures = self.follower_idle_textures
+        if self.follower_idle_textures:
+            self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_draw(self):
         if self.tile_map:
@@ -193,6 +312,14 @@ class Scene:
         if self.follower_physics:
             self.follower_physics.update()
 
+        # Système de charge aléatoire du héros
+        if not self.follower_charging and not self.follower_hurt and self.hero_health > 0:
+            self.charge_cooldown_timer += delta_time
+            if self.charge_cooldown_timer >= self.next_charge_time:
+                self.start_follower_charge()
+                self.charge_cooldown_timer = 0
+                self.next_charge_time = random.uniform(CHARGE_COOLDOWN_MIN, CHARGE_COOLDOWN_MAX)
+
         # Player animation and attack
         if self.attacking:
             self.frame_timer += delta_time
@@ -205,14 +332,8 @@ class Scene:
                 else:
                     self.player_sprite.texture = self.attack_textures[self.current_frame]
                     hit_frame = min(1, len(self.attack_textures)-1) if len(self.attack_textures) > 0 else None
-                    if hit_frame is not None and self.current_frame == hit_frame and not self.player_dealt_damage:
-                        if self.hero_health > 0:
-                            self.hero_health -= self.player_attack_damage
-                            if self.hero_health <= 0:
-                                try:
-                                    self.follower_sprite.kill()
-                                except Exception:
-                                    pass
+                    if self.current_frame == 8 and not self.player_dealt_damage:
+                        self.check_boss_attack_hit()
                         self.player_dealt_damage = True
                 self.frame_timer = 0
         else:
@@ -226,31 +347,110 @@ class Scene:
                 if self.walk_textures:
                     self.player_sprite.texture = self.walk_textures[0]
 
-        # Follower follow and anim
-        dx = self.player_sprite.center_x - self.follower_sprite.center_x
-        dy = self.player_sprite.center_y - self.follower_sprite.center_y
-        min_x = 50
-        min_y = 150
-        if self.player_health > 0 and not self.follower_attacking:
-            if abs(dx) > min_x:
-                self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
-            else:
-                if  abs(dy) < min_y:
-                    self.start_follower_attack()
-        else:
-            self.follower_sprite.change_x = 0
+        # Gestion du délai d'attaque du boss (propulsion)
+        if self.attack_pending:
+            self.attack_hit_timer += delta_time
+            if self.attack_hit_timer >= self.attack_hit_delay:
+                self.attack_pending = False
+                
+                # Vérifier si le héros est toujours vulnérable (pas en charge)
+                if not self.follower_charging:
+                    self.follower_hurt = True
+                    self.follower_hurt_timer = 0
+                    
+                    # Calculer la direction et appliquer la propulsion
+                    if self.follower_sprite.center_x < self.player_sprite.center_x:
+                        knockback_direction = -1
+                    else:
+                        knockback_direction = 1
+                    
+                    self.follower_sprite.change_x = KNOCKBACK_FORCE * knockback_direction
+                    
+                    # Dégâts de propulsion
+                    self.hero_health -= self.player_attack_damage
+                    if self.hero_health <= 0:
+                        try:
+                            self.follower_sprite.kill()
+                        except Exception:
+                            pass
 
-        if not self.follower_attacking:
-            if getattr(self.follower_sprite, 'change_x', 0) != 0 and self.follower_walk_textures:
+        # Follower logic
+        if self.follower_charging:
+            # Animation de charge (utilise attack2)
+            if self.follower_attack_textures:
                 self.follower_timer += delta_time
-                if self.follower_timer > 0.05:
-                    self.follower_frame = (self.follower_frame + 1) % len(self.follower_walk_textures)
-                    self.follower_sprite.texture = self.follower_walk_textures[self.follower_frame]
+                if self.follower_timer > 0.1:
+                    self.follower_frame = (self.follower_frame + 1) % len(self.follower_attack_textures)
+                    self.follower_sprite.texture = self.follower_attack_textures[self.follower_frame]
                     self.follower_timer = 0
-            else:
+            
+            # Vérifier si la charge touche le boss
+            self.check_follower_charge_hit()
+            
+            # Arrêter la charge après un certain temps ou si on s'éloigne trop
+            self.follower_charge_timer += delta_time
+            distance_to_boss = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
+            
+            if self.follower_charge_timer > 5.0 or distance_to_boss > CHARGE_DISTANCE * 2.0:
+                self.follower_charging = False
+                self.follower_charge_timer = 0
+                self.follower_sprite.change_x = 0
+                # Remettre les textures par défaut après la charge
+                self.follower_sprite.textures = self.follower_idle_textures
                 if self.follower_idle_textures:
                     self.follower_sprite.texture = self.follower_idle_textures[0]
+
+        elif self.follower_hurt:
+            # Animation et logique de propulsion
+            self.follower_hurt_timer += delta_time
+            if self.follower_hurt_timer > 0.5:  # Durée de l'état hurt
+                self.follower_hurt = False
+                self.follower_hurt_timer = 0
+            
+            # Réduire progressivement la vitesse de propulsion
+            self.follower_sprite.change_x *= 0.95
+            if abs(self.follower_sprite.change_x) < 0.5:
+                self.follower_sprite.change_x = 0
+
         else:
+            # Comportement normal : suivre le boss (utilise logique du fichier 1)
+            dx = self.player_sprite.center_x - self.follower_sprite.center_x
+            min_distance = 60
+
+            if self.player_health > 0:
+                if abs(dx) > min_distance:
+                    # Assez loin du boss - arrêter l'attaque et suivre
+                    if self.follower_attacking:
+                        self.follower_attacking = False
+                        self.follower_attack_frame = 0
+                        self.follower_attack_timer = 0
+                        self.follower_sprite.textures = self.follower_idle_textures
+                    
+                    self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
+                else:
+                    # Assez proche du boss - déclencher l'attaque si pas déjà en cours
+                    if not self.follower_attacking:
+                        self.start_follower_attack()
+            else:
+                # Boss mort - arrêter toute activité
+                if self.follower_attacking:
+                    self.follower_attacking = False
+                self.follower_sprite.change_x = 0
+
+            # Animation de marche normale (seulement si pas en train d'attaquer)
+            if not self.follower_attacking:
+                if getattr(self.follower_sprite, 'change_x', 0) != 0 and self.follower_walk_textures:
+                    self.follower_timer += delta_time
+                    if self.follower_timer > 0.05:
+                        self.follower_frame = (self.follower_frame + 1) % len(self.follower_walk_textures)
+                        self.follower_sprite.texture = self.follower_walk_textures[self.follower_frame]
+                        self.follower_timer = 0
+                else:
+                    if self.follower_idle_textures:
+                        self.follower_sprite.texture = self.follower_idle_textures[0]
+
+        # Animation d'attaque normale du follower
+        if self.follower_attacking:
             self.follower_attack_timer += delta_time
             if self.follower_attack_timer > 0.02:
                 self.follower_attack_frame += 1
@@ -260,7 +460,18 @@ class Scene:
                     self.follower_sprite.texture = self.follower_attack_textures[self.follower_attack_frame]
                 self.follower_attack_timer = 0
 
-        # flip
+        # Réduire progressivement la vitesse du boss (pour l'effet de knockback)
+        player_input = self.left_pressed or self.right_pressed
+        
+        # Ne ralentir que si c'est un knockback et pas un input du joueur
+        if abs(getattr(self.player_sprite, 'change_x', 0)) > 0 and not self.attacking and not player_input:
+            # Seulement ralentir si la vitesse est élevée (knockback)
+            if abs(self.player_sprite.change_x) > 5:
+                self.player_sprite.change_x *= 0.9
+                if abs(self.player_sprite.change_x) < 0.1:
+                    self.player_sprite.change_x = 0
+
+        # Orientation (flip)
         if self.follower_sprite.center_x < self.player_sprite.center_x:
             self.player_sprite.scale_x = abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = abs(self.follower_sprite.scale_x)
@@ -268,10 +479,9 @@ class Scene:
             self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
 
-    def start_follower_attack(self):
-        if self.player_health <= 0:
-            self.follower_attacking = False
-            self.follower_sprite.change_x = 0
+    def on_key_press(self, key, modifiers):
+        # Le boss ne peut pas bouger si le héros charge
+        if self.follower_charging:
             return
         self.follower_attacking = True
         self.follower_attack_frame = 0
@@ -289,7 +499,6 @@ class Scene:
             try:
                 self.player_sprite.kill()
                 print("Fin du jeu")
-                self.end_Timer(start_time=start_time)
                 arcade.exit()
             except Exception:
                 pass
@@ -305,8 +514,10 @@ class Scene:
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
             self.player_sprite.change_y = 20
         elif key == arcade.key.LEFT:
+            self.left_pressed = True
             self.player_sprite.change_x = -5
         elif key == arcade.key.RIGHT:
+            self.right_pressed = True
             self.player_sprite.change_x = 5
         elif key == arcade.key.SPACE:
             if not self.attacking and self.player_health > 0:
@@ -320,5 +531,15 @@ class Scene:
                     arcade.play_sound(self.boss_attack_sound)
 
     def on_key_release(self, key, modifiers):
-        if key == arcade.key.LEFT or key == arcade.key.RIGHT:
-            self.player_sprite.change_x = 0
+        # Le boss ne peut pas s'arrêter si le héros charge (il reste figé)
+        if self.follower_charging:
+            return
+            
+        if key == arcade.key.LEFT:
+            self.left_pressed = False
+            if not self.right_pressed:
+                self.player_sprite.change_x = 0
+        elif key == arcade.key.RIGHT:
+            self.right_pressed = False
+            if not self.left_pressed:
+                self.player_sprite.change_x = 0
