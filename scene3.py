@@ -2,6 +2,7 @@
 import arcade
 import os
 import random
+import math
 
 # Scene module for graphics, assets and logic
 SCREEN_WIDTH = 640
@@ -13,6 +14,8 @@ ATTACK_FRAMES_FOLDER = "assets/sprites/Demon/attack"
 FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
 FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
+FIREBALL_SHOOT_FOLDER = "assets/fireballshoot"
+FIREBALL_EXPLODE_FOLDER = "assets/fireballexplode"
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
@@ -24,6 +27,83 @@ FOLLOWER_CHARGE_SPEED = 3
 CHARGE_COOLDOWN_MIN = 3.0
 CHARGE_COOLDOWN_MAX = 3.0
 CHARGE_DISTANCE = 200
+
+# Constantes pour le système de fireball
+FIREBALL_SPEED = 5
+FIREBALL_DAMAGE = 3
+FIREBALL_COOLDOWN = 2.0  # Délai entre les fireballs
+
+class Fireball(arcade.Sprite):
+    """Classe pour les projectiles fireball"""
+    def __init__(self, shoot_textures, explode_textures):
+        super().__init__()
+        self.shoot_textures = shoot_textures
+        self.explode_textures = explode_textures
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.exploding = False
+        self.target_x = 0
+        self.target_y = 0
+        self.velocity_x = 0
+        self.velocity_y = 0
+        
+        if shoot_textures:
+            self.texture = shoot_textures[0]
+            self.textures = shoot_textures
+    
+    def setup_trajectory(self, start_x, start_y, target_x, target_y):
+        """Configure la trajectoire de la fireball"""
+        
+        self.center_x = start_x
+        self.center_y = start_y
+        self.target_x = target_x
+        self.target_y = target_y
+        
+        # Calculer la direction
+        dx = target_x - start_x
+        dy = target_y - start_y
+        distance = (dx**2 + dy**2)**0.5
+        
+        if distance > 0:
+            self.velocity_x = (dx / distance) * FIREBALL_SPEED
+            self.velocity_y = (dy / distance) * FIREBALL_SPEED
+            
+            # Calculer l'angle pour orienter le haut de l'image vers la direction
+            # atan2 donne l'angle en radians, on le convertit en degrés
+            angle_rad = math.atan2(dy, dx)
+            # On ajoute 90° car l'image pointe vers le haut par défaut (0°)
+            # et on veut qu'elle pointe dans la direction du mouvement
+            self.angle = math.degrees(angle_rad) - 90
+    
+    def update_animation(self, delta_time):
+        """Met à jour l'animation de la fireball"""
+        self.frame_timer += delta_time
+        
+        if self.exploding:
+            if self.frame_timer > 0.1:
+                self.current_frame += 1
+                if self.current_frame >= len(self.explode_textures):
+                    return True  # Animation d'explosion terminée
+                else:
+                    self.texture = self.explode_textures[self.current_frame]
+                self.frame_timer = 0
+        else:
+            if self.frame_timer > 0.1:
+                self.current_frame = (self.current_frame + 1) % len(self.shoot_textures)
+                self.texture = self.shoot_textures[self.current_frame]
+                self.frame_timer = 0
+        
+        return False
+    
+    def start_explosion(self):
+        """Démarre l'animation d'explosion"""
+        self.exploding = True
+        self.current_frame = 0
+        self.textures = self.explode_textures
+        self.velocity_x = 0
+        self.velocity_y = 0
+        if self.explode_textures:
+            self.texture = self.explode_textures[0]
 
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
@@ -39,6 +119,7 @@ class Scene:
         # Sprites & lists
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
+        self.fireball_list = arcade.SpriteList()
         self.player_sprite = None
         self.follower_sprite = None
         self.tile_map = None
@@ -53,6 +134,10 @@ class Scene:
         self.follower_idle_textures = []
         self.follower_walk_textures = []
         self.follower_attack_textures = []
+        
+        # Fireball animations
+        self.fireball_shoot_textures = []
+        self.fireball_explode_textures = []
 
         # Animation state
         self.current_frame = 0
@@ -91,6 +176,10 @@ class Scene:
         # Suivi des touches pressées pour éviter les conflits
         self.left_pressed = False
         self.right_pressed = False
+
+        # Système de fireball
+        self.fireball_cooldown_timer = 0
+        self.fireball_list = arcade.SpriteList()
 
         # Scene name
         self.name = 3
@@ -147,6 +236,10 @@ class Scene:
         self.follower_attack_textures = self.load_frames(FOLLOWER_ATTACK_FRAMES_FOLDER)
         if not self.follower_attack_textures:
             self.follower_attack_textures = self.follower_idle_textures.copy()
+        
+        # Load fireball animations
+        self.fireball_shoot_textures = self.load_frames(FIREBALL_SHOOT_FOLDER)
+        self.fireball_explode_textures = self.load_frames(FIREBALL_EXPLODE_FOLDER)
 
         # Create sprites
         self.player_sprite = arcade.Sprite()
@@ -155,7 +248,7 @@ class Scene:
             self.player_sprite.texture = self.walk_textures[0]
         self.player_sprite.center_x = 100
         self.player_sprite.center_y = 600
-        self.player_sprite.scale = 1.5
+        self.player_sprite.scale = 1.4
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
         self.player_list.append(self.player_sprite)
 
@@ -165,7 +258,7 @@ class Scene:
             self.follower_sprite.texture = self.follower_idle_textures[0]
         self.follower_sprite.center_x = 700
         self.follower_sprite.center_y = 600
-        self.follower_sprite.scale = 2
+        self.follower_sprite.scale = 2.0
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
         self.player_list.append(self.follower_sprite)
 
@@ -207,7 +300,53 @@ class Scene:
                 if self.follower_idle_textures:
                     self.follower_sprite.texture = self.follower_idle_textures[0]
 
+    def create_fireball(self):
+        """Crée une nouvelle fireball dirigée vers le boss"""
+        if self.fireball_shoot_textures and self.hero_health > 0:
+            fireball = Fireball(self.fireball_shoot_textures, self.fireball_explode_textures)
+            
+            # Position de départ (follower)
+            start_x = self.follower_sprite.center_x
+            start_y = self.follower_sprite.center_y
+            
+            # Position cible (quart bas du boss)
+            target_x = self.player_sprite.center_x
+            target_y = self.player_sprite.center_y - (self.player_sprite.height * 0.375)
+            
+            # Configurer la trajectoire
+            fireball.setup_trajectory(start_x, start_y, target_x, target_y)
+            fireball.scale = 1.0
+            
+            # Ajouter à la liste
+            self.fireball_list.append(fireball)
+            
+            # Reset du cooldown
+            self.fireball_cooldown_timer = 0
+
     def start_follower_charge(self):
+        """Démarre l'attaque de charge du héros"""
+        if not self.follower_hurt and not self.follower_charging and self.hero_health > 0:
+            # Arrêter l'attaque en cours pour lancer la charge
+            if self.follower_attacking:
+                self.follower_attacking = False
+                self.follower_attack_frame = 0
+                self.follower_attack_timer = 0
+            
+            self.follower_charging = True
+            self.follower_charge_timer = 0
+            self.charge_hit_checked = False
+            self.follower_frame = 0
+            
+            # Changer vers les textures d'attaque pour la charge (attack2)
+            self.follower_sprite.textures = self.follower_attack_textures
+            if self.follower_attack_textures:
+                self.follower_sprite.texture = self.follower_attack_textures[0]
+            
+            # Déterminer la direction de la charge (vers le boss)
+            if self.player_sprite.center_x > self.follower_sprite.center_x:
+                self.follower_sprite.change_x = FOLLOWER_CHARGE_SPEED
+            else:
+                self.follower_sprite.change_x = -FOLLOWER_CHARGE_SPEED
         """Démarre l'attaque de charge du héros"""
         if not self.follower_hurt and not self.follower_charging and self.hero_health > 0:
             # Arrêter l'attaque en cours pour lancer la charge
@@ -272,6 +411,7 @@ class Scene:
         # Draw layers
         self.wall_list.draw()
         self.player_list.draw()
+        self.fireball_list.draw()
 
         # Health bars
         hb_w, hb_h = 50, 10
@@ -303,6 +443,49 @@ class Scene:
                 self.charge_cooldown_timer = 0
                 self.next_charge_time = random.uniform(CHARGE_COOLDOWN_MIN, CHARGE_COOLDOWN_MAX)
 
+        # Système de fireball
+        self.fireball_cooldown_timer += delta_time
+        if (self.fireball_cooldown_timer >= FIREBALL_COOLDOWN and 
+            not self.follower_charging and not self.follower_attacking and 
+            self.hero_health > 0 and self.player_health > 0):
+            # Lancer une fireball seulement si à distance raisonnable
+            distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
+            if distance > 100:  # Pas trop proche pour éviter le spam
+                self.create_fireball()
+
+        # Mise à jour des fireballs
+        fireballs_to_remove = []
+        for fireball in self.fireball_list:
+            # Mouvement de la fireball
+            if not fireball.exploding:
+                fireball.center_x += fireball.velocity_x
+                fireball.center_y += fireball.velocity_y
+                
+                # Vérifier collision avec le boss
+                if (abs(fireball.center_x - self.player_sprite.center_x) < 30 and
+                    abs(fireball.center_y - self.player_sprite.center_y) < 30):
+                    # Collision détectée
+                    fireball.start_explosion()
+                    self.player_health -= FIREBALL_DAMAGE
+                    if self.player_health <= 0:
+                        try:
+                            self.player_sprite.kill()
+                        except Exception:
+                            pass
+                
+                # Supprimer si sort de l'écran
+                if (fireball.center_x < -50 or fireball.center_x > SCREEN_WIDTH + 50 or
+                    fireball.center_y < -50 or fireball.center_y > SCREEN_HEIGHT + 50):
+                    fireballs_to_remove.append(fireball)
+            
+            # Animation
+            if fireball.update_animation(delta_time):
+                fireballs_to_remove.append(fireball)
+        
+        # Supprimer les fireballs terminées
+        for fireball in fireballs_to_remove:
+            fireball.remove_from_sprite_lists()
+
         # Player animation and attack
         if self.attacking:
             self.frame_timer += delta_time
@@ -315,7 +498,7 @@ class Scene:
                 else:
                     self.player_sprite.texture = self.attack_textures[self.current_frame]
                     hit_frame = min(1, len(self.attack_textures)-1) if len(self.attack_textures) > 0 else None
-                    if self.current_frame == 8 and not self.player_dealt_damage:
+                    if hit_frame is not None and self.current_frame == hit_frame and not self.player_dealt_damage:
                         self.check_boss_attack_hit()
                         self.player_dealt_damage = True
                 self.frame_timer = 0
