@@ -236,7 +236,7 @@ class Scene:
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
-        self.player_sprite.center_x = 700
+        self.player_sprite.center_x = 300
         self.player_sprite.center_y = 600
         self.player_sprite.scale = 1.4
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
