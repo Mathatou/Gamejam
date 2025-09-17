@@ -24,6 +24,8 @@ TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
+LEADERBOARD_FILE = "leaderboard.txt"
+
 # Constantes pour le système de propulsion
 KNOCKBACK_FORCE = 10
 KNOCKBACK_DISTANCE = 270
@@ -236,7 +238,7 @@ class Scene:
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
-        self.player_sprite.center_x = 700
+        self.player_sprite.center_x = 650
         self.player_sprite.center_y = 600
         self.player_sprite.scale = 1.4
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
