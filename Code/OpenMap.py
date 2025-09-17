@@ -82,7 +82,6 @@ class MyGame(arcade.Window):
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
                 layer.draw()
-
         self.player_list.draw()
 
     def on_update(self, delta_time):
