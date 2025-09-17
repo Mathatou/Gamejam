@@ -3,8 +3,8 @@ import importlib
 from MenuView import *
 
 # --- Constantes ---
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
 SCREEN_TITLE = "Hold'em!"
 
 class MainView(arcade.View):
