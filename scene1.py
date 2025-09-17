@@ -11,7 +11,7 @@ WALK_FRAMES_FOLDER = "assets/sprites/Monster_1/walk"
 ATTACK_FRAMES_FOLDER = "assets/sprites/Monster_1/attack"
 FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 TILE_SCALING = 1.48
 MAP_FILE = "./Tileset/Maps/First_map.tmx"
 FOLLOWER_SPEED = 1.5
@@ -127,8 +127,8 @@ class Scene:
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
-        self.player_sprite.center_x = 100
-        self.player_sprite.center_y = 600
+        self.player_sprite.center_x =  600
+        self.player_sprite.center_y =  600
         self.player_sprite.scale = 2.0
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
         self.player_list.append(self.player_sprite)
@@ -137,8 +137,8 @@ class Scene:
         self.follower_sprite.textures = self.follower_idle_textures
         if self.follower_idle_textures:
             self.follower_sprite.texture = self.follower_idle_textures[0]
-        self.follower_sprite.center_x = 700
-        self.follower_sprite.center_y = 600
+        self.follower_sprite.center_x =  100
+        self.follower_sprite.center_y =  600
         self.follower_sprite.scale = 2.0
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
         self.player_list.append(self.follower_sprite)
