@@ -9,12 +9,14 @@ SCREEN_HEIGHT = 480
 SCREEN_TITLE = "Plateforme 2D avec map fixe"
 
 # Paths used by this scene (adjust per scene file)
+
 WALK_FRAMES_FOLDER = "sprites/Monster_2/walk"
 ATTACK_FRAMES_FOLDER = "sprites/Monster_2/attack2"
 
 FOLLOWER_WALK_FOLDER = "sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "sprites/Hero/idle"
 FOLLOWER_ATTACK_FRAMES_FOLDER = "sprites/Hero/atk"
+
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
 FOLLOWER_SPEED = 1.5
