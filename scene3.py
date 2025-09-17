@@ -161,7 +161,7 @@ class Scene:
         self.follower_attack_timer = 0
 
         # Health and damage
-        self.player_health = 100
+        self.player_health = 45
         self.player_max_health = self.player_health
         self.hero_health = 100
         self.hero_max_health = self.hero_health
@@ -405,9 +405,11 @@ class Scene:
         if self.follower_physics:
             self.follower_physics.update()
 
-        # Système de fireball
+        # Système de fireball avec cooldown dynamique selon la vie du héros
         self.fireball_cooldown_timer += delta_time
-        if (self.fireball_cooldown_timer >= FIREBALL_COOLDOWN and 
+        # Cooldown minimum 0.5s, maximum 2.0s (ajuste selon besoin)
+        cooldown = max(0.5, 2.0 * (self.hero_health / max(1, self.hero_max_health)))
+        if (self.fireball_cooldown_timer >= cooldown and 
             not self.follower_attacking and 
             self.hero_health > 0 and self.player_health > 0):
             # Lancer une fireball seulement si à distance raisonnable
