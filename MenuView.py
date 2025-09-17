@@ -9,9 +9,12 @@ from main import MainView
 
 # --- chemins des sprites ---
 BUTTON_FOLDER = "assets/sprites/Button"
-BUTTON_IDLE = f"{BUTTON_FOLDER}/button_idle.png"
-BUTTON_HOVER = f"{BUTTON_FOLDER}/button_hover.png"
-BUTTON_PRESSED = f"{BUTTON_FOLDER}/button_pressed.png"
+START_IDLE = f"{BUTTON_FOLDER}/start_idle.png"
+START_HOVER = f"{BUTTON_FOLDER}/start_hover.png"
+START_PRESSED = f"{BUTTON_FOLDER}/start_pressed.png"
+EXIT_IDLE = f"{BUTTON_FOLDER}/exit_idle.png"
+EXIT_HOVER = f"{BUTTON_FOLDER}/exit_hover.png"
+EXIT_PRESSED = f"{BUTTON_FOLDER}/exit_pressed.png"
 
 
 class MenuView(arcade.View):
@@ -22,18 +25,21 @@ class MenuView(arcade.View):
         self.manager = arcade.gui.UIManager()
 
         # textures bouton
-        idle = arcade.load_texture(BUTTON_IDLE)
-        hover = arcade.load_texture(BUTTON_HOVER)
-        pressed = arcade.load_texture(BUTTON_PRESSED)
-        btn_w, btn_h = idle.width, idle.height
+        start_idle = arcade.load_texture(START_IDLE)
+        start_hover = arcade.load_texture(START_HOVER)
+        start_pressed = arcade.load_texture(START_PRESSED)
+        exit_idle = arcade.load_texture(EXIT_IDLE)
+        exit_hover = arcade.load_texture(EXIT_HOVER)
+        exit_pressed = arcade.load_texture(EXIT_PRESSED)
+        btn_w, btn_h = start_idle.width, start_idle.height
 
         # boutons (Start / Exit)
         self.start_button = arcade.gui.UITextureButton(
-            texture=idle, texture_hovered=hover, texture_pressed=pressed,
+            texture=start_idle, texture_hovered=start_hover, texture_pressed=start_pressed,
             width=btn_w, height=btn_h
         )
         self.exit_button = arcade.gui.UITextureButton(
-            texture=idle, texture_hovered=hover, texture_pressed=pressed,
+            texture=exit_idle, texture_hovered=exit_hover, texture_pressed=exit_pressed,
             width=btn_w, height=btn_h
         )
 
@@ -48,33 +54,15 @@ class MenuView(arcade.View):
         def _exit(_e):
             arcade.exit()
 
-        # police “pixel” (fallback inclus dans Arcade)
-        # Pour une vraie police pixel, placez un .ttf et décommentez load_font + changez font_name.
-        arcade.load_font("assets/fonts/Counting Apples.ttf")
-        self.font_name = "Counting Apples"
-
-        # labels superposés
-        font_size = 24
-        self.start_label = arcade.gui.UILabel(
-            text="START", font_size=font_size, font_name=self.font_name,
-            bold=True, text_color=arcade.color.WHITE
-        )
-        self.exit_label = arcade.gui.UILabel(
-            text="EXIT", font_size=font_size, font_name=self.font_name,
-            bold=True, text_color=arcade.color.WHITE
-        )
-
         # rangée = ancre qui empile bouton + label au centre
-        def make_row(button, label):
+        def make_row(button):
             row = arcade.gui.UIAnchorLayout(width=btn_w, height=btn_h)
             # bouton centré
             row.add(button, anchor_x="center_x", anchor_y="center_y")
-            # label centré mais relevé de 20 px
-            row.add(label, anchor_x="center_x", anchor_y="center_y", align_y=5)
             return row
 
-        start_row = make_row(self.start_button, self.start_label)
-        exit_row = make_row(self.exit_button, self.exit_label)
+        start_row = make_row(self.start_button)
+        exit_row = make_row(self.exit_button)
 
         # --- GRID LAYOUT (séparation garantie) ---
         self.grid = arcade.gui.UIGridLayout(
