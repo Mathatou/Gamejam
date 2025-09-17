@@ -72,7 +72,7 @@ class MenuView(arcade.View):
             from main import MainView as _MainView
             game_view = _MainView(self.window)
             game_view.setup_scene('scene1')
-            game_view.start_Timer()
+            game_view.start_timer()
             self.window.show_view(game_view)
 
         @self.exit_button.event("on_click")
