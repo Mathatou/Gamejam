@@ -3,8 +3,8 @@ import arcade
 import os
 
 # Scene module for graphics, assets and logic
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
 
 # Paths used by this scene (adjust per scene file)
 WALK_FRAMES_FOLDER = "assets/sprites/Demon/walk"
@@ -32,7 +32,7 @@ class Scene:
         self.wall_list = arcade.SpriteList()
         self.player_sprite = None
         self.follower_sprite = None
-
+        self.tile_map = None
         # Physics
         self.physics_engine = None
         self.follower_physics = None
@@ -106,8 +106,8 @@ class Scene:
 
         # Tilemap / ground
         try:
-            tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
-            self.wall_list = tile_map.sprite_lists.get('Platforms') or tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
+            self.tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
+            self.wall_list = self.tile_map.sprite_lists.get('Platforms') or self.tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
         except Exception:
             self.wall_list = arcade.SpriteList()
 
@@ -146,17 +146,10 @@ class Scene:
         self.follower_physics = arcade.PhysicsEnginePlatformer(self.follower_sprite, self.wall_list, gravity_constant=1)
 
     def on_draw(self):
-        # Draw background
-        if self.background_texture:
-          arcade.draw_texture_rect(
-                self.background_texture,
-                arcade.XYWH(
-                    SCREEN_WIDTH / 2,
-                    SCREEN_HEIGHT / 2,
-                    SCREEN_WIDTH,
-                    SCREEN_HEIGHT
-                )
-            )
+        if self.tile_map:
+            for layer in self.tile_map.sprite_lists.values():
+                layer.draw()
+
         # Draw layers
         self.wall_list.draw()
         self.player_list.draw()
@@ -218,12 +211,15 @@ class Scene:
 
         # Follower follow and anim
         dx = self.player_sprite.center_x - self.follower_sprite.center_x
-        min_distance = 110
+        dy = self.player_sprite.center_y - self.follower_sprite.center_y
+        min_x = 50
+        min_y = 10
         if self.player_health > 0 and not self.follower_attacking:
-            if abs(dx) > min_distance:
+            if abs(dx) > min_x:
                 self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
             else:
-                self.start_follower_attack()
+                if  abs(dy) < min_y:
+                    self.start_follower_attack()
         else:
             self.follower_sprite.change_x = 0
 
