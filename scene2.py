@@ -1,6 +1,8 @@
 #--- scene2.py ---
 import arcade
 import os
+import random
+import math
 
 # Scene module for graphics, assets and logic
 # --- Constantes ---
@@ -29,6 +31,13 @@ FOLLOWER_SPEED = 1.5
 # --- Clignotement ---
 BLINK_HEALTH_THRESHOLD = 5   # si player_health < 5 -> clignoter
 BLINK_INTERVAL = 0.15        # secondes entre alternances
+
+# Particules
+PARTICLE_DEFAULT_COUNT = 18
+PARTICLE_MIN_SPEED = 1.0
+PARTICLE_MAX_SPEED = 3.0
+PARTICLE_MIN_LIFE = 0.4
+PARTICLE_MAX_LIFE = 1.0
 
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
@@ -82,6 +91,13 @@ class Scene:
         self.player_blink_timer = 0.0
         self.player_blink_visible = True
         self.blink_interval = BLINK_INTERVAL
+
+        # Particules
+        try:
+            self.particle_texture = arcade.make_circle_texture(6, arcade.color.ALIZARIN_CRIMSON)
+        except Exception:
+            self.particle_texture = None
+        self.particle_list = arcade.SpriteList()
 
         # Scene name
         self.name=2
@@ -186,12 +202,34 @@ class Scene:
         except Exception:
             self.follower_physics = None
 
+    def spawn_particles(self, x, y, count=PARTICLE_DEFAULT_COUNT):
+        """Crée des particules simples autour de (x,y)."""
+        if self.particle_texture is None:
+            return
+        for _ in range(count):
+            p = arcade.Sprite()
+            p.texture = self.particle_texture
+            p.center_x = x + random.uniform(-6, 6)
+            p.center_y = y + random.uniform(-6, 6)
+            speed = random.uniform(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED)
+            angle = random.uniform(0, 2 * math.pi)
+            p.vx = math.cos(angle) * speed
+            p.vy = math.sin(angle) * speed * 0.8
+            p.max_life = random.uniform(PARTICLE_MIN_LIFE, PARTICLE_MAX_LIFE)
+            p.life = p.max_life
+            p.alpha = 255
+            p.scale = random.uniform(0.6, 1.2)
+            self.particle_list.append(p)
+
     def on_draw(self):
         # Draw layers
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
                 layer.draw()
         self.player_list.draw()
+
+        # draw particles (au-dessus des sprites pour effet visible)
+        self.particle_list.draw()
 
         # Health bars
         if self.player_sprite:
@@ -260,6 +298,8 @@ class Scene:
                 self.follower_sprite.change_x = KNOCKBACK_FORCE * knockback_direction
                 # Dégâts
                 self.hero_health -= self.player_attack_damage
+                # spawn particules au point d'impact du follower
+                self.spawn_particles(self.follower_sprite.center_x, self.follower_sprite.center_y, count=20)
                 if self.hero_health <= 0:
                     try:
                         self.follower_sprite.kill()
@@ -335,6 +375,21 @@ class Scene:
                 self.player_blink_timer = 0.0
                 self.player_blink_visible = True
 
+        # Mettre à jour les particules (position, gravité simple, alpha)
+        if len(self.particle_list) > 0:
+            remove_list = []
+            for p in self.particle_list:
+                p.center_x += getattr(p, 'vx', 0)
+                p.center_y += getattr(p, 'vy', 0)
+                p.vy -= 0.12  # légère gravité
+                p.life -= delta_time
+                if p.life <= 0:
+                    remove_list.append(p)
+                else:
+                    p.alpha = int(255 * (p.life / max(0.0001, p.max_life)))
+            for p in remove_list:
+                p.remove_from_sprite_lists()
+
     def check_boss_attack_hit(self):
         """Vérifie si l'attaque du boss va toucher le héros (avec délai)"""
         distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
@@ -359,6 +414,8 @@ class Scene:
 
     def finish_follower_attack(self):
         self.player_health -= self.follower_attack_damage
+        # spawn particules quand le joueur est touché
+        self.spawn_particles(self.player_sprite.center_x, self.player_sprite.center_y, count=12)
         if self.player_health <= 0:
             try:
                 self.player_sprite.kill()

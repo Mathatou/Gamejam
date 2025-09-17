@@ -39,6 +39,13 @@ FIREBALL_COOLDOWN = 2.0  # Délai entre les fireballs
 BLINK_HEALTH_THRESHOLD = 10
 BLINK_INTERVAL = 0.15
 
+# Particules
+PARTICLE_DEFAULT_COUNT = 18
+PARTICLE_MIN_SPEED = 1.0
+PARTICLE_MAX_SPEED = 3.0
+PARTICLE_MIN_LIFE = 0.4
+PARTICLE_MAX_LIFE = 1.0
+
 class Fireball(arcade.Sprite):
     """Classe pour les projectiles fireball"""
     def __init__(self, shoot_textures, explode_textures):
@@ -181,6 +188,13 @@ class Scene:
         self.player_blink_timer = 0.0
         self.player_blink_visible = True
         self.blink_interval = BLINK_INTERVAL
+
+        # Particules
+        try:
+            self.particle_texture = arcade.make_circle_texture(6, arcade.color.ALIZARIN_CRIMSON)
+        except Exception:
+            self.particle_texture = None
+        self.particle_list = arcade.SpriteList()
 
         # Scene name
         self.name = 3
@@ -334,6 +348,11 @@ class Scene:
     def finish_follower_attack(self):
         """Termine l'attaque du follower et inflige des dégâts"""
         self.player_health -= self.follower_attack_damage
+        # particules quand le joueur est touché
+        try:
+            self.spawn_particles(self.player_sprite.center_x, self.player_sprite.center_y, count=12)
+        except Exception:
+            pass
         if self.player_health <= 0:
             try:
                 self.player_sprite.kill()
@@ -360,6 +379,9 @@ class Scene:
         self.wall_list.draw()
         self.player_list.draw()
         self.fireball_list.draw()
+
+        # draw particles (au-dessus des sprites)
+        self.particle_list.draw()
 
         # Health bars
         hb_w, hb_h = 50, 10
@@ -407,6 +429,11 @@ class Scene:
                     abs(fireball.center_y - boss_target_y) < 30):
                     # Collision détectée
                     fireball.start_explosion()
+                    # particules à l'impact
+                    try:
+                        self.spawn_particles(self.player_sprite.center_x, self.player_sprite.center_y, count=14)
+                    except Exception:
+                        pass
                     self.player_health -= FIREBALL_DAMAGE
                     if self.player_health <= 0:
                         try:
@@ -477,6 +504,11 @@ class Scene:
                 
                 # Dégâts de propulsion
                 self.hero_health -= self.player_attack_damage
+                # particules au point d'impact du follower
+                try:
+                    self.spawn_particles(self.follower_sprite.center_x, self.follower_sprite.center_y, count=20)
+                except Exception:
+                    pass
                 if self.hero_health <= 0:
                     try:
                         self.follower_sprite.kill()
@@ -581,6 +613,25 @@ class Scene:
                 self.player_blink_timer = 0.0
                 self.player_blink_visible = True
 
+        # Mettre à jour les particules (position, gravité simple, alpha)
+        if len(self.particle_list) > 0:
+            remove_list = []
+            for p in self.particle_list:
+                p.center_x += getattr(p, 'vx', 0)
+                p.center_y += getattr(p, 'vy', 0)
+                p.vy -= 0.12  # légère gravité
+                p.life = getattr(p, 'life', getattr(p, 'max_life', 0)) - delta_time
+                setattr(p, 'life', p.life)
+                if p.life <= 0:
+                    remove_list.append(p)
+                else:
+                    try:
+                        p.alpha = int(255 * (p.life / max(0.0001, p.max_life)))
+                    except Exception:
+                        p.alpha = 255
+            for p in remove_list:
+                p.remove_from_sprite_lists()
+
     def on_key_press(self, key, modifiers):
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
             self.player_sprite.change_y = 20
@@ -610,3 +661,22 @@ class Scene:
             self.right_pressed = False
             if not self.left_pressed:
                 self.player_sprite.change_x = 0
+
+    def spawn_particles(self, x, y, count=PARTICLE_DEFAULT_COUNT):
+        """Crée des particules simples autour de (x,y)."""
+        if self.particle_texture is None:
+            return
+        for _ in range(count):
+            p = arcade.Sprite()
+            p.texture = self.particle_texture
+            p.center_x = x + random.uniform(-6, 6)
+            p.center_y = y + random.uniform(-6, 6)
+            speed = random.uniform(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED)
+            angle = random.uniform(0, 2 * math.pi)
+            p.vx = math.cos(angle) * speed
+            p.vy = math.sin(angle) * speed * 0.8
+            p.max_life = random.uniform(PARTICLE_MIN_LIFE, PARTICLE_MAX_LIFE)
+            p.life = p.max_life
+            p.alpha = 255
+            p.scale = random.uniform(0.6, 1.2)
+            self.particle_list.append(p)

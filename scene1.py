@@ -1,6 +1,8 @@
 #--- scene2.py ---
 import arcade
 import os
+import random
+import math
 
 # Scene module for graphics, assets and logic
 SCREEN_WIDTH = 640
@@ -19,6 +21,13 @@ FOLLOWER_SPEED = 1.5
 # Clignotement du joueur : si player_health < BLINK_HEALTH_THRESHOLD -> clignoter
 BLINK_HEALTH_THRESHOLD = 5
 BLINK_INTERVAL = 0.15
+
+# Particules
+PARTICLE_DEFAULT_COUNT = 18
+PARTICLE_MIN_SPEED = 1.0
+PARTICLE_MAX_SPEED = 3.0
+PARTICLE_MIN_LIFE = 0.4
+PARTICLE_MAX_LIFE = 1.0
 
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
@@ -73,6 +82,13 @@ class Scene:
         self.player_blink_timer = 0.0
         self.player_blink_visible = True
         self.blink_interval = BLINK_INTERVAL
+
+        # Particules
+        try:
+            self.particle_texture = arcade.make_circle_texture(6, arcade.color.ALIZARIN_CRIMSON)
+        except Exception:
+            self.particle_texture = None
+        self.particle_list = arcade.SpriteList()
 
         # Scene name
         self.name=1
@@ -156,6 +172,25 @@ class Scene:
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.wall_list, gravity_constant=1)
         self.follower_physics = arcade.PhysicsEnginePlatformer(self.follower_sprite, self.wall_list, gravity_constant=1)
 
+    def spawn_particles(self, x, y, count=PARTICLE_DEFAULT_COUNT):
+        """Crée des particules simples autour de (x,y)."""
+        if self.particle_texture is None:
+            return
+        for _ in range(count):
+            p = arcade.Sprite()
+            p.texture = self.particle_texture
+            p.center_x = x + random.uniform(-6, 6)
+            p.center_y = y + random.uniform(-6, 6)
+            speed = random.uniform(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED)
+            angle = random.uniform(0, 2 * math.pi)
+            p.vx = math.cos(angle) * speed
+            p.vy = math.sin(angle) * speed * 0.8
+            p.max_life = random.uniform(PARTICLE_MIN_LIFE, PARTICLE_MAX_LIFE)
+            p.life = p.max_life
+            p.alpha = 255
+            p.scale = random.uniform(0.6, 1.2)
+            self.particle_list.append(p)
+
     def on_draw(self):
         # Draw background
         if self.background_texture:
@@ -175,6 +210,9 @@ class Scene:
         # Draw layers
         self.wall_list.draw()
         self.player_list.draw()
+
+        # draw particles (au-dessus des sprites pour effet visible)
+        self.particle_list.draw()
 
         # Health bars
         hb_w, hb_h = 50, 10
@@ -285,6 +323,24 @@ class Scene:
                 self.player_blink_timer = 0.0
                 self.player_blink_visible = True
 
+        # Mettre à jour les particules (position, gravité simple, alpha)
+        if len(self.particle_list) > 0:
+            remove_list = []
+            for p in self.particle_list:
+                p.center_x += getattr(p, 'vx', 0)
+                p.center_y += getattr(p, 'vy', 0)
+                p.vy -= 0.12  # légère gravité
+                p.life -= delta_time
+                if p.life <= 0:
+                    remove_list.append(p)
+                else:
+                    try:
+                        p.alpha = int(255 * (p.life / max(0.0001, p.max_life)))
+                    except Exception:
+                        p.alpha = 255
+            for p in remove_list:
+                p.remove_from_sprite_lists()
+
     def start_follower_attack(self):
         if self.player_health <= 0:
             self.follower_attacking = False
@@ -302,6 +358,11 @@ class Scene:
 
     def finish_follower_attack(self):
         self.player_health -= self.follower_attack_damage
+        # spawn particules quand le joueur est touché
+        try:
+            self.spawn_particles(self.player_sprite.center_x, self.player_sprite.center_y, count=12)
+        except Exception:
+            pass
         if self.player_health <= 0:
             try:
                 self.player_sprite.kill()
