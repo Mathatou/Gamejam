@@ -1,20 +1,22 @@
 #--- scene2.py ---
 import arcade
 import os
-import importlib
 
 # Scene module for graphics, assets and logic
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+# --- Constantes ---
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+SCREEN_TITLE = "Plateforme 2D avec map fixe"
 
 # Paths used by this scene (adjust per scene file)
-WALK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/02_demon_walk"
-ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/boss_demon_slime_FREE_v1.0/boss_demon_slime_FREE_v1.0/individual_sprites/03_demon_cleave"
-FOLLOWER_WALK_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/02_walk"
-FOLLOWER_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/01_idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "/home/kokou/gameJam/Elementals_water_priestess_FREE_v1.1/png/09_3_atk"
+WALK_FRAMES_FOLDER = "sprites/Monster_2/walk"
+ATTACK_FRAMES_FOLDER = "sprites/Monster_2/attack2"
+
+FOLLOWER_WALK_FOLDER = "sprites/Hero/walk1"
+FOLLOWER_FRAMES_FOLDER = "sprites/Hero/idle"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "sprites/Hero/atk"
 TILE_SCALING = 1.48
-MAP_FILE = "/home/kokou/gameJam/Tileset/oak_woods_v1.0/Second_Map.tmx"
+MAP_FILE = "Tileset/Maps/Second_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
 class Scene:
@@ -22,7 +24,7 @@ class Scene:
     def __init__(self):
         # Visuals
         self.background_texture = None
-
+        self.tile_map = None
         # Sounds
         self.boss_attack_sound = None
         self.follower_attack_sound = None
@@ -30,7 +32,7 @@ class Scene:
 
         # Sprites & lists
         self.player_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
+        self.wall_list = None
         self.player_sprite = None
         self.follower_sprite = None
 
@@ -85,6 +87,18 @@ class Scene:
         return textures
 
     def setup(self):
+        # --- Charger la map ---
+        try:
+            self.tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
+        except Exception:
+            self.tile_map = None
+
+        # Unifier la récupération du calque sol (Platforms ou Ground)
+        if self.tile_map:
+            self.wall_list = self.tile_map.sprite_lists.get('Platforms') or self.tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
+        else:
+            self.wall_list = arcade.SpriteList()
+
         # Load sounds and music
         try:
             self.boss_attack_sound = arcade.load_sound(":resources:sounds/hit5.wav")
@@ -99,40 +113,36 @@ class Scene:
         except Exception:
             self.background_music = None
 
-        # Background image
-        try:
-            self.background_texture = arcade.load_texture(":resources:images/backgrounds/stars.png")
-        except Exception:
-            self.background_texture = None
+        # No background texture for this scene (use tiles from TMX)
+        self.background_texture = None
 
-        # Tilemap / ground
-        try:
-            tile_map = arcade.load_tilemap(MAP_FILE, scaling=TILE_SCALING)
-            self.wall_list = tile_map.sprite_lists.get('Platforms') or tile_map.sprite_lists.get('Ground') or arcade.SpriteList()
-        except Exception:
-            self.wall_list = arcade.SpriteList()
-
-        # Load frames
+        # Load frames BEFORE creating sprites so textures are available
         self.walk_textures = self.load_frames(WALK_FRAMES_FOLDER)
-        self.attack_textures = self.load_frames(ATTACK_FRAMES_FOLDER)[1:]
+        frames = self.load_frames(ATTACK_FRAMES_FOLDER)
+        self.attack_textures = frames[1:] if len(frames) > 1 else frames
         self.follower_idle_textures = self.load_frames(FOLLOWER_FRAMES_FOLDER)
         self.follower_walk_textures = self.load_frames(FOLLOWER_WALK_FOLDER)
         self.follower_attack_textures = self.load_frames(FOLLOWER_ATTACK_FRAMES_FOLDER)
         if not self.follower_attack_textures:
             self.follower_attack_textures = self.follower_idle_textures.copy()
 
-        # Create sprites
-        self.player_sprite = arcade.Sprite()
+        # Create player sprite using loaded walk textures (like follower)
+        if not self.player_sprite:
+            self.player_sprite = arcade.Sprite()
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
         self.player_sprite.center_x = 100
-        self.player_sprite.center_y = 600
+        # reasonable vertical position on the map
+        self.player_sprite.center_y = 200
         self.player_sprite.scale = 2.0
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
-        self.player_list.append(self.player_sprite)
+        if self.player_sprite not in self.player_list:
+            self.player_list.append(self.player_sprite)
 
-        self.follower_sprite = arcade.Sprite()
+        # Create follower sprite
+        if not self.follower_sprite:
+            self.follower_sprite = arcade.Sprite()
         self.follower_sprite.textures = self.follower_idle_textures
         if self.follower_idle_textures:
             self.follower_sprite.texture = self.follower_idle_textures[0]
@@ -140,43 +150,42 @@ class Scene:
         self.follower_sprite.center_y = 600
         self.follower_sprite.scale = 2.0
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
-        self.player_list.append(self.follower_sprite)
+        if self.follower_sprite not in self.player_list:
+            self.player_list.append(self.follower_sprite)
 
-        # Physics
-        self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.wall_list, gravity_constant=1)
-        self.follower_physics = arcade.PhysicsEnginePlatformer(self.follower_sprite, self.wall_list, gravity_constant=1)
+        # Physics: create engines safely using self.wall_list
+        try:
+            self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.wall_list, gravity_constant=1)
+        except Exception:
+            self.physics_engine = None
+        try:
+            self.follower_physics = arcade.PhysicsEnginePlatformer(self.follower_sprite, self.wall_list, gravity_constant=1)
+        except Exception:
+            self.follower_physics = None
 
     def on_draw(self):
-        # Draw background
-        if self.background_texture:
-          arcade.draw_texture_rect(
-                self.background_texture,
-                arcade.XYWH(
-                    SCREEN_WIDTH / 2,
-                    SCREEN_HEIGHT / 2,
-                    SCREEN_WIDTH,
-                    SCREEN_HEIGHT
-                )
-            )
         # Draw layers
-        self.wall_list.draw()
+        if self.tile_map:
+            for layer in self.tile_map.sprite_lists.values():
+                layer.draw()
         self.player_list.draw()
 
         # Health bars
-        hb_w, hb_h = 50, 10
-        hx = self.player_sprite.center_x - hb_w//2
-        hy = self.player_sprite.center_y + self.player_sprite.height//4
-        arcade.draw_lbwh_rectangle_filled(hx, hy, hb_w, hb_h, arcade.color.GRAY)
-        hp_p = self.player_health / max(1, self.player_max_health)
-        arcade.draw_lbwh_rectangle_filled(hx, hy, hb_w * hp_p, hb_h, arcade.color.GREEN if hp_p > 0.3 else arcade.color.RED)
+        if self.player_sprite:
+            hb_w, hb_h = 50, 10
+            hx = self.player_sprite.center_x - hb_w//2
+            hy = self.player_sprite.center_y + (getattr(self.player_sprite, 'height', 0)//4)
+            arcade.draw_lbwh_rectangle_filled(hx, hy, hb_w, hb_h, arcade.color.GRAY)
+            hp_p = self.player_health / max(1, self.player_max_health)
+            arcade.draw_lbwh_rectangle_filled(hx, hy, hb_w * hp_p, hb_h, arcade.color.GREEN if hp_p > 0.3 else arcade.color.RED)
 
-        # Hero bar
-        hero_w, hero_h = 40, 8
-        hx2 = self.follower_sprite.center_x - hero_w//2
-        hy2 = self.follower_sprite.center_y + self.follower_sprite.height//4
-        arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w, hero_h, arcade.color.GRAY)
-        hero_p = max(0.0, min(1.0, (self.hero_health / max(1, self.hero_max_health))))
-        arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w * hero_p, hero_h, arcade.color.GREEN if hero_p > 0.3 else arcade.color.RED)
+        if self.follower_sprite:
+            hero_w, hero_h = 40, 8
+            hx2 = self.follower_sprite.center_x - hero_w//2
+            hy2 = self.follower_sprite.center_y + (getattr(self.follower_sprite, 'height', 0)//4)
+            arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w, hero_h, arcade.color.GRAY)
+            hero_p = max(0.0, min(1.0, (self.hero_health / max(1, self.hero_max_health))))
+            arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w * hero_p, hero_h, arcade.color.GREEN if hero_p > 0.3 else arcade.color.RED)
 
     def on_update(self, delta_time):
         if self.physics_engine:
@@ -219,12 +228,15 @@ class Scene:
 
         # Follower follow and anim
         dx = self.player_sprite.center_x - self.follower_sprite.center_x
-        min_distance = 110
+        dy = self.player_sprite.center_y - self.follower_sprite.center_y
+        min_x = 50
+        min_y = 10
         if self.player_health > 0 and not self.follower_attacking:
-            if abs(dx) > min_distance:
+            if abs(dx) > min_x:
                 self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
             else:
-                self.start_follower_attack()
+                if  abs(dy) < min_y:
+                    self.start_follower_attack()
         else:
             self.follower_sprite.change_x = 0
 
@@ -250,10 +262,10 @@ class Scene:
 
         # flip
         if self.follower_sprite.center_x < self.player_sprite.center_x:
-            self.player_sprite.scale_x = abs(self.player_sprite.scale_x)
+            self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = abs(self.follower_sprite.scale_x)
         else:
-            self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
+            self.player_sprite.scale_x = abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
 
     def start_follower_attack(self):

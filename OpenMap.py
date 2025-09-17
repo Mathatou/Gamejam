@@ -6,9 +6,8 @@ SCREEN_HEIGHT = 480
 SCREEN_TITLE = "Plateforme 2D avec map fixe"
 
 TILE_SCALING = 1.48
-MAP_FILE = "Tileset/Maps/Last_Map.tmx" # N°3
-MAP_FILE = "Tileset/Maps/Second_Map.tmx" # N°2
-print(MAP_FILE)
+MAP_FILE = ".\Tileset\oak_woods_v1.0\First_Map.tmx"   # fichier créé avec Tiled
+
 
 class MyGame(arcade.Window):
     def __init__(self):
@@ -51,6 +50,7 @@ class MyGame(arcade.Window):
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
                 layer.draw()
+
         self.player_list.draw()
 
     def on_update(self, delta_time):
