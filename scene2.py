@@ -48,6 +48,16 @@ RAIN_HEIGHT = 12
 RAIN_COLOR = arcade.color.LIGHT_GRAY
 
 class Scene:
+    # Dialogues for scene 2 (English, short, with character names)
+    dialogues = [
+        "Narrator: 10 minutes later...",
+        "Hero: After so much effort... I finally face the entrance of the demon's castle...",
+        "Hero: Is this the last guardian of the lord of this realm?",
+        "Skeleton: Skrrrklonk... shaka-shaka? (You think I’m cracking under the pressure?)",
+        "Skeleton: Brrrzzzt-kloklok! (I'm just cracking my bones!)",
+    ]
+    dialogue_index = 0
+    dialogue_active = True
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
     def __init__(self):
         # Visuals
@@ -292,7 +302,15 @@ class Scene:
             hero_p = max(0.0, min(1.0, (self.hero_health / max(1, self.hero_max_health))))
             arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w * hero_p, hero_h, arcade.color.GREEN if hero_p > 0.3 else arcade.color.RED)
 
+        # Display current dialogue (smaller font)
+        if self.dialogue_active:
+            text = self.dialogues[self.dialogue_index]
+            arcade.draw_text(text, 30, 30, arcade.color.WHITE, 14, width=580, align="left")
+            arcade.draw_text("Press SPACE to continue...", 30, 10, arcade.color.LIGHT_GRAY, 12)
+
     def on_update(self, delta_time):
+        if self.dialogue_active:
+            return
         if self.physics_engine:
             self.physics_engine.update()
         if self.follower_physics:
@@ -493,6 +511,12 @@ class Scene:
             self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_key_press(self, key, modifiers):
+        # Advance dialogue with SPACE, start fight after last
+        if self.dialogue_active and key == arcade.key.SPACE:
+            self.dialogue_index += 1
+            if self.dialogue_index >= len(self.dialogues):
+                self.dialogue_active = False
+            return
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
             self.player_sprite.change_y = 20
         elif key == arcade.key.LEFT:

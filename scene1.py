@@ -30,6 +30,15 @@ PARTICLE_MIN_LIFE = 0.4
 PARTICLE_MAX_LIFE = 1.0
 
 class Scene:
+    # Dialogues for scene 1 (English, short)
+    dialogues = [
+        "Hero : What is this weird monster?! I didn’t even get to warm up.",
+        "Hero : This will serve as training!",
+        "Monshroom : Blergh shwoop-shwoop! Shipidiko toxicoatak!",
+        "Monshroom : (You punk! I’m gonna crush you, Toxic Attack!)",
+    ]
+    dialogue_index = 0
+    dialogue_active = True
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
     def __init__(self):
         # Visuals
@@ -230,7 +239,15 @@ class Scene:
         hero_p = max(0.0, min(1.0, (self.hero_health / max(1, self.hero_max_health))))
         arcade.draw_lbwh_rectangle_filled(hx2, hy2, hero_w * hero_p, hero_h, arcade.color.GREEN if hero_p > 0.3 else arcade.color.RED)
 
+        # Display current dialogue (smaller font)
+        if self.dialogue_active:
+            text = self.dialogues[self.dialogue_index]
+            arcade.draw_text(text, 30, 30, arcade.color.WHITE, 14, width=580, align="left")
+            arcade.draw_text("Press SPACE to continue...", 30, 10, arcade.color.LIGHT_GRAY, 12)
+
     def on_update(self, delta_time):
+        if self.dialogue_active:
+            return
         if self.physics_engine:
             self.physics_engine.update()
         if self.follower_physics:
@@ -377,6 +394,12 @@ class Scene:
             self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_key_press(self, key, modifiers):
+        # Advance dialogue with SPACE, start fight after last
+        if self.dialogue_active and key == arcade.key.SPACE:
+            self.dialogue_index += 1
+            if self.dialogue_index >= len(self.dialogues):
+                self.dialogue_active = False
+            return
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
             self.player_sprite.change_y = 20
         elif key == arcade.key.LEFT:
