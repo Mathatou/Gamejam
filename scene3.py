@@ -1,20 +1,19 @@
 #--- scene2.py ---
 import arcade
 import os
-import importlib
 
 # Scene module for graphics, assets and logic
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 # Paths used by this scene (adjust per scene file)
-WALK_FRAMES_FOLDER = "sprites/Demon/walk"
-ATTACK_FRAMES_FOLDER = "sprites/Monster_1/attack"
-FOLLOWER_WALK_FOLDER = "sprites/Hero/walk1"
-FOLLOWER_FRAMES_FOLDER = "sprites/Hero/idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "sprites/Hero/attack"
+WALK_FRAMES_FOLDER = "assets/sprites/Demon/walk"
+ATTACK_FRAMES_FOLDER = "assets/sprites/Demon/attack"
+FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
+FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack"
 TILE_SCALING = 1.48
-MAP_FILE = "Tileset/oak_woods_v1.0/Second_Map.tmx"
+MAP_FILE = "Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
 class Scene:
