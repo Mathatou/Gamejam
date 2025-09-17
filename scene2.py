@@ -39,6 +39,14 @@ PARTICLE_MAX_SPEED = 3.0
 PARTICLE_MIN_LIFE = 0.4
 PARTICLE_MAX_LIFE = 1.0
 
+# Pluie (ambiance)
+RAIN_SPAWN_RATE = 80          # gouttes par seconde (moyenne)
+RAIN_MIN_SPEED = 3.0
+RAIN_MAX_SPEED = 7.0
+RAIN_WIDTH = 2
+RAIN_HEIGHT = 12
+RAIN_COLOR = arcade.color.LIGHT_GRAY
+
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
     def __init__(self):
@@ -98,6 +106,19 @@ class Scene:
         except Exception:
             self.particle_texture = None
         self.particle_list = arcade.SpriteList()
+
+        # Pluie (ambiance)
+        try:
+            # essai texture fine verticale si disponible
+            self.rain_texture = arcade.make_soft_square_texture(RAIN_HEIGHT, RAIN_COLOR)
+        except Exception:
+            try:
+                self.rain_texture = arcade.make_circle_texture(4, RAIN_COLOR)
+            except Exception:
+                self.rain_texture = None
+        self.rain_list = arcade.SpriteList()
+        self.rain_accumulator = 0.0
+        self.rain_spawn_rate = RAIN_SPAWN_RATE
 
         # Scene name
         self.name=2
@@ -221,11 +242,34 @@ class Scene:
             p.scale = random.uniform(0.6, 1.2)
             self.particle_list.append(p)
 
+    def spawn_rain(self, x=None, y=None, count=1):
+        """Crée 'count' gouttes de pluie réparties en haut de l'écran (x/y None -> positions aléatoires)."""
+        if self.rain_texture is None:
+            return
+        for _ in range(count):
+            r = arcade.Sprite()
+            r.texture = self.rain_texture
+            # spawn across the screen if x is None
+            r.center_x = random.uniform(0, SCREEN_WIDTH) if x is None else (x + random.uniform(-20, 20))
+            r.center_y = SCREEN_HEIGHT + random.uniform(0, 40) if y is None else y + random.uniform(-4, 4)
+            speed = random.uniform(RAIN_MIN_SPEED, RAIN_MAX_SPEED)
+            r.vx = random.uniform(-0.5, 0.5)  # slight wind
+            r.vy = -speed
+            r.alpha = 180
+            # adjust scale so small thin drops are plausible
+            tex_w = getattr(self.rain_texture, 'width', RAIN_WIDTH)
+            r.scale = (RAIN_WIDTH / max(1, tex_w))
+            self.rain_list.append(r)
+
     def on_draw(self):
         # Draw layers
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
                 layer.draw()
+
+        # draw rain (behind sprites for ambiance)
+        self.rain_list.draw()
+
         self.player_list.draw()
 
         # draw particles (au-dessus des sprites pour effet visible)
@@ -253,6 +297,25 @@ class Scene:
             self.physics_engine.update()
         if self.follower_physics:
             self.follower_physics.update()
+
+        # Spawn rain continuously based on spawn rate
+        self.rain_accumulator += self.rain_spawn_rate * delta_time
+        if self.rain_accumulator >= 1.0:
+            to_spawn = int(self.rain_accumulator)
+            self.spawn_rain(None, None, count=to_spawn)
+            self.rain_accumulator -= to_spawn
+
+        # Update rain positions and remove off-screen
+        if len(self.rain_list) > 0:
+            remove_r = []
+            for r in self.rain_list:
+                r.center_x += getattr(r, 'vx', 0)
+                r.center_y += getattr(r, 'vy', 0)
+                # remove when below screen
+                if r.center_y < -20:
+                    remove_r.append(r)
+            for r in remove_r:
+                r.remove_from_sprite_lists()
 
         # Player animation and attack
         if self.attacking:
