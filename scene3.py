@@ -218,12 +218,15 @@ class Scene:
 
         # Follower follow and anim
         dx = self.player_sprite.center_x - self.follower_sprite.center_x
-        min_distance = 110
+        dy = self.player_sprite.center_y - self.follower_sprite.center_y
+        min_x = 50
+        min_y = 10
         if self.player_health > 0 and not self.follower_attacking:
-            if abs(dx) > min_distance:
+            if abs(dx) > min_x:
                 self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
             else:
-                self.start_follower_attack()
+                if  abs(dy) < min_y:
+                    self.start_follower_attack()
         else:
             self.follower_sprite.change_x = 0
 
