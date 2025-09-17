@@ -24,7 +24,7 @@ KNOCKBACK_DISTANCE = 165
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
-FOLLOWER_SPEED = 1.5
+FOLLOWER_SPEED = 1.7
 
 # --- Clignotement ---
 BLINK_HEALTH_THRESHOLD = 5   # si player_health < 5 -> clignoter
@@ -89,7 +89,7 @@ class Scene:
         self.next_scene_module = "scene3"
 
         # Knockback system (propulsion)
-        self.attack_hit_delay = 0.2
+        self.attack_hit_delay = 0.3
         self.attack_hit_timer = 0
         self.attack_pending = False
         self.follower_hurt = False
