@@ -15,7 +15,7 @@ ATTACK_FRAMES_FOLDER = "assets/sprites/Monster_2/attack2"
 
 FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
-FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/atk"
+FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"

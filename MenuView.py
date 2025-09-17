@@ -62,6 +62,7 @@ class MenuView(arcade.View):
         def _start(_e):
             game_view = MainView(self.window)
             game_view.setup_scene('scene1')
+            game_view.start_Timer()
             self.window.show_view(game_view)
 
         @self.exit_button.event("on_click")

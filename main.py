@@ -1,11 +1,13 @@
 #--- main.py ---
 import importlib
+import time
 from MenuView import *
 
 # --- Constantes ---
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 SCREEN_TITLE = "Hold'em!"
+start_time = 0
 
 class MainView(arcade.View):
     def __init__(self, window):
@@ -14,6 +16,11 @@ class MainView(arcade.View):
         self.scene_module = None
         self.background_player = None
 
+    def start_Timer(self):
+        global start_time
+        start_time = time.perf_counter()
+        print("Début du décompte : ",start_time)
+    
     def setup_scene(self, scene_module_name='scene1'):
         try:
             mod = importlib.import_module(scene_module_name)
