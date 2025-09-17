@@ -27,7 +27,7 @@ FOLLOWER_SPEED = 1.5
 LEADERBOARD_FILE = "leaderboard.txt"
 
 # Constantes pour le système de propulsion
-KNOCKBACK_FORCE = 10
+KNOCKBACK_FORCE = 7
 KNOCKBACK_DISTANCE = 270
 
 # Constantes pour le système de fireball

@@ -17,6 +17,11 @@ FOLLOWER_WALK_FOLDER = "assets/sprites/Hero/walk1"
 FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
 FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 
+# Constantes pour le système de propulsion
+KNOCKBACK_FORCE = 5
+KNOCKBACK_DISTANCE = 165
+
+
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
 FOLLOWER_SPEED = 1.5
@@ -73,6 +78,13 @@ class Scene:
         self.name=2
         # Name of the next scene module to load when player dies (optional)
         self.next_scene_module = "scene3"
+
+        # Knockback system (propulsion)
+        self.attack_hit_delay = 0.2
+        self.attack_hit_timer = 0
+        self.attack_pending = False
+        self.follower_hurt = False
+        self.follower_hurt_timer = 0
 
     def load_frames(self, folder):
         textures = []
@@ -206,15 +218,10 @@ class Scene:
                     self.player_sprite.textures = self.walk_textures
                 else:
                     self.player_sprite.texture = self.attack_textures[self.current_frame]
-                    hit_frame = min(1, len(self.attack_textures)-1) if len(self.attack_textures) > 0 else None
-                    if hit_frame is not None and self.current_frame == hit_frame and not self.player_dealt_damage:
-                        if self.hero_health > 0:
-                            self.hero_health -= self.player_attack_damage
-                            if self.hero_health <= 0:
-                                try:
-                                    self.follower_sprite.kill()
-                                except Exception:
-                                    pass
+                    # Knockback: déclenchement à la frame d'attaque
+                    hit_frame = 1 if len(self.attack_textures) > 1 else 0
+                    if self.current_frame == hit_frame and not self.player_dealt_damage:
+                        self.check_boss_attack_hit()
                         self.player_dealt_damage = True
                 self.frame_timer = 0
         else:
@@ -228,39 +235,71 @@ class Scene:
                 if self.walk_textures:
                     self.player_sprite.texture = self.walk_textures[0]
 
-        # Follower follow and anim
-        dx = self.player_sprite.center_x - self.follower_sprite.center_x
-        dy = self.player_sprite.center_y - self.follower_sprite.center_y
-        min_x = 50
-        min_y = 10
-        if self.player_health > 0 and not self.follower_attacking:
-            if abs(dx) > min_x:
-                self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
-            else:
-                if  abs(dy) < min_y:
-                    self.start_follower_attack()
-        else:
-            self.follower_sprite.change_x = 0
 
-        if not self.follower_attacking:
-            if getattr(self.follower_sprite, 'change_x', 0) != 0 and self.follower_walk_textures:
-                self.follower_timer += delta_time
-                if self.follower_timer > 0.05:
-                    self.follower_frame = (self.follower_frame + 1) % len(self.follower_walk_textures)
-                    self.follower_sprite.texture = self.follower_walk_textures[self.follower_frame]
-                    self.follower_timer = 0
-            else:
-                if self.follower_idle_textures:
-                    self.follower_sprite.texture = self.follower_idle_textures[0]
-        else:
-            self.follower_attack_timer += delta_time
-            if self.follower_attack_timer > 0.02:
-                self.follower_attack_frame += 1
-                if self.follower_attack_frame >= len(self.follower_attack_textures):
-                    self.finish_follower_attack()
+        # Knockback system (propulsion du follower)
+        if self.attack_pending:
+            self.attack_hit_timer += delta_time
+            if self.attack_hit_timer >= self.attack_hit_delay:
+                self.attack_pending = False
+                self.follower_hurt = True
+                self.follower_hurt_timer = 0
+                # Direction knockback
+                if self.follower_sprite.center_x < self.player_sprite.center_x:
+                    knockback_direction = -1
                 else:
-                    self.follower_sprite.texture = self.follower_attack_textures[self.follower_attack_frame]
-                self.follower_attack_timer = 0
+                    knockback_direction = 1
+                self.follower_sprite.change_x = KNOCKBACK_FORCE * knockback_direction
+                # Dégâts
+                self.hero_health -= self.player_attack_damage
+                if self.hero_health <= 0:
+                    try:
+                        self.follower_sprite.kill()
+                    except Exception:
+                        pass
+
+        if self.follower_hurt:
+            self.follower_hurt_timer += delta_time
+            if self.follower_hurt_timer > 0.5:
+                self.follower_hurt = False
+                self.follower_hurt_timer = 0
+            # Réduire progressivement la vitesse
+            self.follower_sprite.change_x *= 0.95
+            if abs(self.follower_sprite.change_x) < 0.5:
+                self.follower_sprite.change_x = 0
+        else:
+            # Follower follow and anim (normal)
+            dx = self.player_sprite.center_x - self.follower_sprite.center_x
+            dy = self.player_sprite.center_y - self.follower_sprite.center_y
+            min_x = 50
+            min_y = 10
+            if self.player_health > 0 and not self.follower_attacking:
+                if abs(dx) > min_x:
+                    self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
+                else:
+                    if abs(dy) < min_y:
+                        self.start_follower_attack()
+            else:
+                self.follower_sprite.change_x = 0
+
+            if not self.follower_attacking:
+                if getattr(self.follower_sprite, 'change_x', 0) != 0 and self.follower_walk_textures:
+                    self.follower_timer += delta_time
+                    if self.follower_timer > 0.05:
+                        self.follower_frame = (self.follower_frame + 1) % len(self.follower_walk_textures)
+                        self.follower_sprite.texture = self.follower_walk_textures[self.follower_frame]
+                        self.follower_timer = 0
+                else:
+                    if self.follower_idle_textures:
+                        self.follower_sprite.texture = self.follower_idle_textures[0]
+            else:
+                self.follower_attack_timer += delta_time
+                if self.follower_attack_timer > 0.02:
+                    self.follower_attack_frame += 1
+                    if self.follower_attack_frame >= len(self.follower_attack_textures):
+                        self.finish_follower_attack()
+                    else:
+                        self.follower_sprite.texture = self.follower_attack_textures[self.follower_attack_frame]
+                    self.follower_attack_timer = 0
 
         # flip
         if self.follower_sprite.center_x < self.player_sprite.center_x:
@@ -269,6 +308,13 @@ class Scene:
         else:
             self.player_sprite.scale_x = abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
+
+    def check_boss_attack_hit(self):
+        """Vérifie si l'attaque du boss va toucher le héros (avec délai)"""
+        distance = abs(self.player_sprite.center_x - self.follower_sprite.center_x)
+        if distance <= KNOCKBACK_DISTANCE and not self.follower_hurt and not self.attack_pending:
+            self.attack_pending = True
+            self.attack_hit_timer = 0
 
     def start_follower_attack(self):
         if self.player_health <= 0:
