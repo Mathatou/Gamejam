@@ -70,7 +70,6 @@ class Scene:
         self.follower_attack_timer = 0
 
         # Health and damage
-        self.player_health = 100
         self.player_max_health = self.player_health
         self.hero_health = 100
         self.hero_max_health = self.hero_health
@@ -100,18 +99,6 @@ class Scene:
         self.name = 3
         # Name of the next scene module to load when player dies (optional)
         self.next_scene_module = None
-
-    def end_Timer(self,start_time):
-        global exec_time
-        end_time = time.perf_counter()
-        print("Start_Time : ",start_time)
-        print("End_time : ",end_time)
-        exec_time = end_time - start_time
-        exec_time = round(exec_time,2)
-        exec_time_min = exec_time / 60
-        exec_time_min = round(exec_time_min,2)
-        print("Temps total de jeu : ",exec_time_min,"min")
-        print("Temps total de jeu : ",exec_time,"sec")
 
 
     def load_frames(self, folder):
@@ -198,6 +185,18 @@ class Scene:
         if distance <= KNOCKBACK_DISTANCE and not self.follower_hurt and not self.attack_pending and not self.follower_charging:
             self.attack_pending = True
             self.attack_hit_timer = 0
+    
+    def end_Timer (self,start_time):
+        global exec_time
+        end_time = time.perf_counter()
+        print("Start_Time : ",start_time)
+        print("End_time : ",end_time)
+        exec_time = end_time - start_time
+        exec_time = round(exec_time,2)
+        exec_time_min = exec_time / 60
+        exec_time_min = round(exec_time_min,2)
+        print("Temps total de jeu : ",exec_time_min,"min")
+        print("Temps total de jeu : ",exec_time,"sec")
 
     def check_follower_charge_hit(self):
         """Vérifie si la charge du héros touche le boss"""
@@ -212,6 +211,10 @@ class Scene:
                 if self.player_health <= 0:
                     try:
                         self.player_sprite.kill()
+                        print("Fin du jeu")
+                        print("check_follower_charge_hit")
+                        self.end_Timer(start_time)
+                        arcade.exit()
                     except Exception:
                         pass
                 
@@ -263,23 +266,6 @@ class Scene:
             self.follower_sprite.texture = self.follower_attack_textures[0]
         if self.follower_attack_sound:
             arcade.play_sound(self.follower_attack_sound)
-
-    def finish_follower_attack(self):
-        if not self.follower_charging:  # Pas de dégâts pendant la charge
-            self.player_health -= self.follower_attack_damage
-            if self.player_health <= 0:
-                try:
-                    self.player_sprite.kill()
-                except Exception:
-                    pass
-        self.follower_attacking = False
-        self.follower_attack_frame = 0
-        self.follower_attack_timer = 0
-        if not self.follower_hurt:
-            self.follower_sprite.change_x = 0
-        self.follower_sprite.textures = self.follower_idle_textures
-        if self.follower_idle_textures:
-            self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_draw(self):
         if self.tile_map:
@@ -499,6 +485,7 @@ class Scene:
             try:
                 self.player_sprite.kill()
                 print("Fin du jeu")
+                self.end_Timer(start_time)
                 arcade.exit()
             except Exception:
                 pass
