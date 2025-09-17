@@ -16,6 +16,10 @@ TILE_SCALING = 1.48
 MAP_FILE = "./Tileset/Maps/First_map.tmx"
 FOLLOWER_SPEED = 1.5
 
+# Clignotement du joueur : si player_health < BLINK_HEALTH_THRESHOLD -> clignoter
+BLINK_HEALTH_THRESHOLD = 5
+BLINK_INTERVAL = 0.15
+
 class Scene:
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
     def __init__(self):
@@ -64,6 +68,11 @@ class Scene:
         self.player_attack_damage = 1
         self.follower_attack_damage = 1
         self.player_dealt_damage = False
+
+        # Clignotement du player (état)
+        self.player_blink_timer = 0.0
+        self.player_blink_visible = True
+        self.blink_interval = BLINK_INTERVAL
 
         # Scene name
         self.name=1
@@ -260,6 +269,21 @@ class Scene:
         else:
             self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
+
+        # Clignotement : faire clignoter le joueur si sa vie est strictement inférieure au seuil
+        if self.player_sprite:
+            if 0 < self.player_health < BLINK_HEALTH_THRESHOLD:
+                self.player_blink_timer += delta_time
+                if self.player_blink_timer > self.blink_interval:
+                    self.player_blink_visible = not self.player_blink_visible
+                    self.player_sprite.alpha = 255 if self.player_blink_visible else 0
+                    self.player_blink_timer = 0.0
+            else:
+                # s'assurer que le sprite est visible quand la condition n'est plus vraie
+                if getattr(self.player_sprite, 'alpha', 255) != 255:
+                    self.player_sprite.alpha = 255
+                self.player_blink_timer = 0.0
+                self.player_blink_visible = True
 
     def start_follower_attack(self):
         if self.player_health <= 0:

@@ -24,6 +24,8 @@ TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
+LEADERBOARD_FILE = "leaderboard.txt"
+
 # Constantes pour le système de propulsion
 KNOCKBACK_FORCE = 10
 KNOCKBACK_DISTANCE = 270
@@ -32,6 +34,10 @@ KNOCKBACK_DISTANCE = 270
 FIREBALL_SPEED = 5
 FIREBALL_DAMAGE = 3
 FIREBALL_COOLDOWN = 2.0  # Délai entre les fireballs
+
+# --- Clignotement du joueur ---
+BLINK_HEALTH_THRESHOLD = 10
+BLINK_INTERVAL = 0.15
 
 class Fireball(arcade.Sprite):
     """Classe pour les projectiles fireball"""
@@ -171,6 +177,11 @@ class Scene:
         self.fireball_cooldown_timer = 0
         self.fireball_list = arcade.SpriteList()
 
+        # Clignotement du player (état)
+        self.player_blink_timer = 0.0
+        self.player_blink_visible = True
+        self.blink_interval = BLINK_INTERVAL
+
         # Scene name
         self.name = 3
         # Name of the next scene module to load when player dies (optional)
@@ -236,7 +247,11 @@ class Scene:
         self.player_sprite.textures = self.walk_textures
         if self.walk_textures:
             self.player_sprite.texture = self.walk_textures[0]
-        self.player_sprite.center_x = 300
+
+
+
+        self.player_sprite.center_x = 650
+
         self.player_sprite.center_y = 600
         self.player_sprite.scale = 1.4
         self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
@@ -550,6 +565,21 @@ class Scene:
         else:
             self.player_sprite.scale_x = -abs(self.player_sprite.scale_x)
             self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
+
+        # Clignotement : faire clignoter le joueur si sa vie est strictement inférieure au seuil
+        if self.player_sprite:
+            if 0 < self.player_health < BLINK_HEALTH_THRESHOLD:
+                self.player_blink_timer += delta_time
+                if self.player_blink_timer > self.blink_interval:
+                    self.player_blink_visible = not self.player_blink_visible
+                    self.player_sprite.alpha = 255 if self.player_blink_visible else 0
+                    self.player_blink_timer = 0.0
+            else:
+                # s'assurer que le sprite est visible quand la condition n'est plus vraie
+                if getattr(self.player_sprite, 'alpha', 255) != 255:
+                    self.player_sprite.alpha = 255
+                self.player_blink_timer = 0.0
+                self.player_blink_visible = True
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
