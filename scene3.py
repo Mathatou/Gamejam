@@ -1,6 +1,10 @@
 #--- scene2.py ---
 import arcade
 import os
+import time
+from main import MainView
+from main import start_time
+
 
 # Scene module for graphics, assets and logic
 SCREEN_WIDTH = 640
@@ -68,6 +72,19 @@ class Scene:
         self.name=3
         # Name of the next scene module to load when player dies (optional)
         self.next_scene_module = None
+
+    def end_Timer(self,start_time):
+        global exec_time
+        end_time = time.perf_counter()
+        print("Start_Time : ",start_time)
+        print("End_time : ",end_time)
+        exec_time = end_time - start_time
+        exec_time = round(exec_time,2)
+        exec_time_min = exec_time / 60
+        exec_time_min = round(exec_time_min,2)
+        print("Temps total de jeu : ",exec_time_min,"min")
+        print("Temps total de jeu : ",exec_time,"sec")
+
 
     def load_frames(self, folder):
         textures = []
@@ -272,6 +289,7 @@ class Scene:
             try:
                 self.player_sprite.kill()
                 print("Fin du jeu")
+                self.end_Timer(start_time=start_time)
                 arcade.exit()
             except Exception:
                 pass
