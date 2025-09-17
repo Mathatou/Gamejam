@@ -123,7 +123,7 @@ class MainView(arcade.View):
 
 
 if __name__ == '__main__':
-    window = arcade.Window(width=960, height=720, title=SCREEN_TITLE, resizable=True)
+    window = arcade.Window(width=1280, height=720, title=SCREEN_TITLE, resizable=True)
 
     from MenuView import MenuView
     window.show_view(MenuView())
