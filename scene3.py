@@ -69,7 +69,7 @@ class Fireball(arcade.Sprite):
             angle_rad = math.atan2(dy, dx)
             # On ajoute 90° car l'image pointe vers le haut par défaut (0°)
             # et on veut qu'elle pointe dans la direction du mouvement
-            self.angle = math.degrees(angle_rad) - 90
+            self.angle = math.degrees(angle_rad) + 90
     
     def update_animation(self, delta_time):
         """Met à jour l'animation de la fireball"""
@@ -273,9 +273,10 @@ class Scene:
             start_x = self.follower_sprite.center_x
             start_y = self.follower_sprite.center_y
             
-            # Position cible (boss)
+            # Position cible (quart bas du boss)
             target_x = self.player_sprite.center_x
-            target_y = self.player_sprite.center_y
+            # Calculer la position du quart bas : centre - (3/8 de la hauteur)
+            target_y = self.player_sprite.center_y - (self.player_sprite.height * 0.375)
             
             # Configurer la trajectoire
             fireball.setup_trajectory(start_x, start_y, target_x, target_y)
@@ -370,9 +371,10 @@ class Scene:
                 fireball.center_x += fireball.velocity_x
                 fireball.center_y += fireball.velocity_y
                 
-                # Vérifier collision avec le boss
+                # Vérifier collision avec le boss (zone du quart bas)
+                boss_target_y = self.player_sprite.center_y - (self.player_sprite.height * 0.375)
                 if (abs(fireball.center_x - self.player_sprite.center_x) < 30 and
-                    abs(fireball.center_y - self.player_sprite.center_y) < 30):
+                    abs(fireball.center_y - boss_target_y) < 30):
                     # Collision détectée
                     fireball.start_explosion()
                     self.player_health -= FIREBALL_DAMAGE
