@@ -27,7 +27,7 @@ KNOCKBACK_DISTANCE = 165
 PLAYER_ATTACK_COOLDOWN = 2  # Délai en secondes entre les attaques du joueur
 
 TILE_SCALING = 1.48
-MAP_FILE = "Tileset/Maps/Second_Map.tmx"
+MAP_FILE = "assets/Tileset/Maps/Second_Map.tmx"
 FOLLOWER_SPEED = 3.7
 
 # --- Clignotement ---
