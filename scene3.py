@@ -4,6 +4,7 @@ import os
 import time
 from main import MainView
 from main import start_time
+from MenuView import MenuView
 
 import random
 import math
@@ -116,6 +117,13 @@ class Fireball(arcade.Sprite):
             self.texture = self.explode_textures[0]
 
 class Scene:
+    def get_exec_time(self, start_time):
+        end_time = time.perf_counter()
+        exec_time = end_time - start_time
+        print()
+        return round(exec_time, 2)
+    ending_screen_active = False
+    ending_time = None
     # Dialogues pour la scène 3
     # Dialogues for scene 3 (English, short, with character names)
     dialogues = [
@@ -367,7 +375,8 @@ class Scene:
                 self.player_sprite.kill()
                 print("Fin du jeu - Boss vaincu par le héros")
                 self.end_Timer(start_time)
-                arcade.exit()
+                self.ending_time = self.get_exec_time(start_time)
+                self.ending_screen_active = True
             except Exception:
                 pass
         self.follower_attacking = False
@@ -380,6 +389,15 @@ class Scene:
             self.follower_sprite.texture = self.follower_idle_textures[0]
 
     def on_draw(self):
+        # Display ending screen if active
+        if self.ending_screen_active:
+            endRect = arcade.rect.LRBT(SCREEN_WIDTH // 2, 500, SCREEN_HEIGHT//2, 200)
+            arcade.draw_rect_filled(endRect, arcade.color.BLACK)
+            arcade.draw_text("Congratulations!", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+60, arcade.color.WHITE, 28, anchor_x="center")
+            if self.ending_time is not None:
+                arcade.draw_text(f"Completion Time: {self.ending_time:.2f} seconds", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+10, arcade.color.LIGHT_GREEN, 20, anchor_x="center")
+            arcade.draw_text("Press ESC to go back to menu", SCREEN_WIDTH//2, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
+            return
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
                 layer.draw()
@@ -415,6 +433,9 @@ class Scene:
             arcade.draw_text("Press SPACE to continue...", 35, 10, arcade.color.LIGHT_GRAY, 12)
 
     def on_update(self, delta_time):
+        # If ending screen is active, skip update logic
+        if self.ending_screen_active:
+            return
         if self.dialogue_active:
             return
         if self.physics_engine:
@@ -458,8 +479,9 @@ class Scene:
                         try:
                             self.player_sprite.kill()
                             print("Fin du jeu - Boss vaincu par fireball")
+                            self.ending_time = self.get_exec_time(start_time)
+                            self.ending_screen_active = True
                             self.end_Timer(start_time)
-                            arcade.exit()
                         except Exception:
                             pass
                 
@@ -533,7 +555,8 @@ class Scene:
                         self.follower_sprite.kill()
                         print("Fin du jeu - Héros vaincu")
                         self.end_Timer(start_time)
-                        arcade.exit()
+                        self.ending_time = self.get_exec_time(start_time)
+                        self.ending_screen_active = True
                     except Exception:
                         pass
 
@@ -563,7 +586,6 @@ class Scene:
                         self.follower_attack_frame = 0
                         self.follower_attack_timer = 0
                         self.follower_sprite.textures = self.follower_idle_textures
-                    
                     self.follower_sprite.change_x = FOLLOWER_SPEED if dx > 0 else -FOLLOWER_SPEED
                 else:
                     # Assez proche du boss - déclencher l'attaque si pas déjà en cours
@@ -652,6 +674,12 @@ class Scene:
                 p.remove_from_sprite_lists()
 
     def on_key_press(self, key, modifiers):
+        global start_time
+        # Allow quitting from ending screen
+        if self.ending_screen_active and key == arcade.key.ESCAPE:
+            window = arcade.get_window()
+            window.show_view(MenuView())
+            return
         # Advance dialogue with SPACE, start fight after last
         if self.dialogue_active and key == arcade.key.SPACE:
             self.dialogue_index += 1
