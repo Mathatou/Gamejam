@@ -403,7 +403,7 @@ class Scene:
             if self.ending_time < 60 :
                 message = "What the hell ?? You didn't even try to held the Hero! Pathetic scum!"
             elif self.ending_time < 120 : 
-                message = "You managed well, but the Hero still tore you apart... Try to be better next time !"
+                message = "You managed well, but the Hero still tore you apart..."
             else : 
                 message = "You held the Hero for a long time, the monster kingdom is proud of you!"
             arcade.draw_text(message , SCREEN_WIDTH//2+30, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
