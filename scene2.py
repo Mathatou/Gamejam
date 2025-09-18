@@ -20,13 +20,15 @@ FOLLOWER_FRAMES_FOLDER = "assets/sprites/Hero/idle"
 FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 
 # Constantes pour le système de propulsion
-KNOCKBACK_FORCE = 5
+KNOCKBACK_FORCE = 3.5
 KNOCKBACK_DISTANCE = 165
 
+# Constante pour le cooldown d'attaque du joueur
+PLAYER_ATTACK_COOLDOWN = 3  # Délai en secondes entre les attaques du joueur
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
-FOLLOWER_SPEED = 1.7
+FOLLOWER_SPEED = 3
 
 # --- Clignotement ---
 BLINK_HEALTH_THRESHOLD = 5   # si player_health < 5 -> clignoter
@@ -53,7 +55,7 @@ class Scene:
         "Narrator: 10 minutes later...",
         "Hero: After so much effort... I finally face the entrance of the demon's castle...",
         "Hero: Is this the last guardian of the lord of this realm?",
-        "Skeleton: Skrrrklonk... shaka-shaka? (You think I’m cracking under the pressure?)",
+        "Skeleton: Skrrrklonk... shaka-shaka? (You think I'm cracking under the pressure?)",
         "Skeleton: Brrrzzzt-kloklok! (I'm just cracking my bones!)",
     ]
     dialogue_index = 0
@@ -95,6 +97,10 @@ class Scene:
         self.follower_attacking = False
         self.follower_attack_frame = 0
         self.follower_attack_timer = 0
+
+        # Système de cooldown pour les attaques du joueur
+        self.player_attack_cooldown_timer = 0.0
+        self.player_can_attack = True
 
         # Health and damage
         self.player_health = 10
@@ -308,9 +314,28 @@ class Scene:
             arcade.draw_text(text, 30, 30, arcade.color.WHITE, 14, width=580, align="left")
             arcade.draw_text("Press SPACE to continue...", 30, 10, arcade.color.LIGHT_GRAY, 12)
 
+        # Afficher indicateur de cooldown si le joueur ne peut pas attaquer
+        if not self.player_can_attack and self.player_sprite:
+            cooldown_text = f"{self.player_attack_cooldown_timer:.1f}s"
+            arcade.draw_text(
+                cooldown_text,
+                self.player_sprite.center_x - 40,
+                self.player_sprite.center_y + 50,
+                arcade.color.YELLOW,
+                12
+            )
+
     def on_update(self, delta_time):
         if self.dialogue_active:
             return
+            
+        # Mettre à jour le cooldown d'attaque du joueur
+        if not self.player_can_attack:
+            self.player_attack_cooldown_timer -= delta_time
+            if self.player_attack_cooldown_timer <= 0:
+                self.player_can_attack = True
+                self.player_attack_cooldown_timer = 0
+                
         if self.physics_engine:
             self.physics_engine.update()
         if self.follower_physics:
@@ -518,13 +543,14 @@ class Scene:
                 self.dialogue_active = False
             return
         if key == arcade.key.UP and self.physics_engine and self.physics_engine.can_jump():
-            self.player_sprite.change_y = 20
+            self.player_sprite.change_y = 16
         elif key == arcade.key.LEFT:
-            self.player_sprite.change_x = -5
+            self.player_sprite.change_x = -3.5
         elif key == arcade.key.RIGHT:
-            self.player_sprite.change_x = 5
+            self.player_sprite.change_x = 3.5
         elif key == arcade.key.SPACE:
-            if not self.attacking and self.player_health > 0:
+            # Vérifier si le joueur peut attaquer (cooldown)
+            if not self.attacking and self.player_health > 0 and self.player_can_attack:
                 self.attacking = True
                 self.player_dealt_damage = False
                 self.current_frame = 0
@@ -533,6 +559,10 @@ class Scene:
                     self.player_sprite.texture = self.attack_textures[0]
                 if self.boss_attack_sound:
                     arcade.play_sound(self.boss_attack_sound)
+                
+                # Déclencher le cooldown d'attaque
+                self.player_can_attack = False
+                self.player_attack_cooldown_timer = PLAYER_ATTACK_COOLDOWN
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.LEFT or key == arcade.key.RIGHT:
