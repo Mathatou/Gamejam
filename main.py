@@ -20,6 +20,8 @@ class MainView(arcade.View):
         super().__init__(window)
         self.background_color = arcade.color.BLACK
 
+        self.bg_music = None
+
         self.game_cam = arcade.Camera2D(
             position=(16*2, 0),
             projection=LRBT(0, VIRTUAL_W, 0, VIRTUAL_H),
@@ -61,7 +63,8 @@ class MainView(arcade.View):
             # (Option) musique de fond de la scène courante
             if getattr(self.current_scene, 'background_music', None):
                 try:
-                    arcade.play_sound(self.current_scene.background_music, volume=0.2)
+                    if self.current_scene.name == 1:
+                        self.bg_music = arcade.play_sound(self.current_scene.background_music, volume=0.2)
                 except Exception:
                     pass
             
@@ -78,6 +81,7 @@ class MainView(arcade.View):
             if next_scene:
                 self.setup_scene(next_scene)
             return
+        self.bg_music.pause()
         vp.play_audio()
         self.video_player = vp
         self.next_scene_after_video = next_scene
@@ -89,6 +93,7 @@ class MainView(arcade.View):
                 self.video_player.close()
             except Exception:
                 pass
+        self.bg_music.play()
         self.video_player = None
 
     # -------------- arcade lifecycle --------------
