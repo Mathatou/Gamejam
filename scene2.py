@@ -28,7 +28,7 @@ PLAYER_ATTACK_COOLDOWN = 3  # Délai en secondes entre les attaques du joueur
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
-FOLLOWER_SPEED = 3
+FOLLOWER_SPEED = 3.7
 
 # --- Clignotement ---
 BLINK_HEALTH_THRESHOLD = 5   # si player_health < 5 -> clignoter
