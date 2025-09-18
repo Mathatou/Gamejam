@@ -401,7 +401,7 @@ class Scene:
             message = ""
             if self.ending_time < 60 :
                 message = "What the hell ?? You didn't even try to held the Hero! Pathetic scum!"
-            elif self.ending_time < 120 : 
+            elif self.ending_time < 90 : 
                 message = "You managed well, but the Hero still tore you apart..."
             else : 
                 message = "You held the Hero for a long time, the monster kingdom is proud of you!"
