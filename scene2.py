@@ -58,6 +58,7 @@ class Scene:
     ]
     dialogue_index = 0
     dialogue_active = True
+
     """Encapsule les assets graphiques, sons, logique et interfaces draw/update/inputs."""
     def __init__(self):
         # Visuals
@@ -305,8 +306,8 @@ class Scene:
         # Display current dialogue (smaller font)
         if self.dialogue_active:
             text = self.dialogues[self.dialogue_index]
-            arcade.draw_text(text, 30, 30, arcade.color.WHITE, 14, width=580, align="left")
-            arcade.draw_text("Press SPACE to continue...", 30, 10, arcade.color.LIGHT_GRAY, 12)
+            arcade.draw_text(text, 35, 40, arcade.color.WHITE, 14, width=580, align="left")
+            arcade.draw_text("Press SPACE to continue...", 35, 10, arcade.color.LIGHT_GRAY, 12)
 
     def on_update(self, delta_time):
         if self.dialogue_active:
