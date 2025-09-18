@@ -311,13 +311,16 @@ class Scene:
             self.attack_pending = True
             self.attack_hit_timer = 0
     
-    def end_Timer(self, start_time):
+    def end_Timer(self):
         """Calcule et affiche le temps total de jeu"""
-        global exec_time
+        global exec_time, start_time
         end_time = time.perf_counter()
         print("Start_Time : ", start_time)
         print("End_time : ", end_time)
-        exec_time = end_time - start_time
+        if start_time > 0:  # Only calculate if start_time is valid
+            exec_time = end_time - start_time
+        else:
+            exec_time = 0
         exec_time = round(exec_time, 2)
         exec_time_min = exec_time / 60
         exec_time_min = round(exec_time_min, 2)
@@ -374,7 +377,7 @@ class Scene:
             try:
                 self.player_sprite.kill()
                 print("Fin du jeu - Boss vaincu par le héros")
-                self.end_Timer(start_time)
+                self.end_Timer()
                 self.ending_time = self.get_exec_time(start_time)
                 self.ending_screen_active = True
             except Exception:
@@ -396,7 +399,7 @@ class Scene:
             arcade.draw_text("Congratulations!", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+60, arcade.color.WHITE, 28, anchor_x="center")
             if self.ending_time is not None:
                 arcade.draw_text(f"Completion Time: {self.ending_time:.2f} seconds", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+10, arcade.color.LIGHT_GREEN, 20, anchor_x="center")
-            arcade.draw_text("Press ESC to go back to menu", SCREEN_WIDTH//2, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
+            arcade.draw_text("Press ESC to quit", SCREEN_WIDTH//2, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
             return
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
@@ -481,7 +484,7 @@ class Scene:
                             print("Fin du jeu - Boss vaincu par fireball")
                             self.ending_time = self.get_exec_time(start_time)
                             self.ending_screen_active = True
-                            self.end_Timer(start_time)
+                            self.end_Timer()
                         except Exception:
                             pass
                 
@@ -554,7 +557,7 @@ class Scene:
                     try:
                         self.follower_sprite.kill()
                         print("Fin du jeu - Héros vaincu")
-                        self.end_Timer(start_time)
+                        self.end_Timer()
                         self.ending_time = self.get_exec_time(start_time)
                         self.ending_screen_active = True
                     except Exception:
@@ -677,8 +680,7 @@ class Scene:
         global start_time
         # Allow quitting from ending screen
         if self.ending_screen_active and key == arcade.key.ESCAPE:
-            window = arcade.get_window()
-            window.show_view(MenuView())
+            arcade.exit()
             return
         # Advance dialogue with SPACE, start fight after last
         if self.dialogue_active and key == arcade.key.SPACE:
