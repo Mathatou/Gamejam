@@ -1,13 +1,16 @@
-# ---------------- MP4 cutscene (OpenCV-only) ----------------
+# ---------------- MP4 cutscene (OpenCV + pyglet audio) ----------------
 import pyglet
+import threading
 
 
 class CutscenePlayer:
     """
-    Decodes frames with OpenCV and draws them via pyglet ImageData.
+    Decode les frames avec OpenCV et les dessine via pyglet ImageData.
+    Joue aussi l'audio en parallèle avec pyglet.media.
     """
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, audio_path: str):
         self.file_path = file_path
+        self.audio_path = audio_path
         self.cap = None          # cv2.VideoCapture
         self.fps = 30.0
         self._accum = 0.0
@@ -15,6 +18,7 @@ class CutscenePlayer:
         self._pyg_image = None   # pyglet.image.ImageData
         self._w = 0
         self._h = 0
+        self._audio_player = None
 
     def open(self) -> bool:
         try:
@@ -36,7 +40,21 @@ class CutscenePlayer:
         except Exception:
             self.fps = 30.0
         self.cap = cap
+
+        # charger l'audio si fourni
+        if self.audio_path:
+            try:
+                music = pyglet.media.load(self.audio_path, streaming=False)
+                self._audio_player = pyglet.media.Player()
+                self._audio_player.queue(music)
+            except Exception as e:
+                print(f"⚠️ Impossible de charger l'audio: {e}")
+
         return True
+
+    def play_audio(self):
+        if self._audio_player:
+            self._audio_player.play()
 
     def update(self, dt: float):
         if self.finished or not self.cap:
@@ -59,6 +77,8 @@ class CutscenePlayer:
 
         if not ok or frame is None:
             self.finished = True
+            if self._audio_player:
+                self._audio_player.pause()
             return
 
         # BGR -> RGB, flip vertically for GL-style coordinates
@@ -81,3 +101,5 @@ class CutscenePlayer:
         self.cap = None
         self._pyg_image = None
         self.finished = True
+        if self._audio_player:
+            self._audio_player.delete()

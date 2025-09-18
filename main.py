@@ -5,6 +5,7 @@ import arcade
 from arcade.types import LRBT
 from arcade import gl
 
+
 from CutscenePlayer import CutscenePlayer
 
 # --- Game constants ---
@@ -61,16 +62,16 @@ class MainView(arcade.View):
             print('[MainView] Failed to load scene module', scene_module_name, e)
 
     # -------------- cutscene control --------------
-    def play_video(self, file_path: str, next_scene: str | None):
+    def play_video(self, file_path: str, next_scene: str | None, audio_path: str):
         self.stop_video()  # safety
 
-        vp = CutscenePlayer(file_path)
+        vp = CutscenePlayer(file_path, audio_path)
         if not vp.open():
             print("⚠️ Could not start OpenCV playback. Skipping to next scene.")
             if next_scene:
                 self.setup_scene(next_scene)
             return
-
+        vp.play_audio()
         self.video_player = vp
         self.next_scene_after_video = next_scene
         print(f"▶️ Playing cutscene via OpenCV: {file_path}")
@@ -97,6 +98,7 @@ class MainView(arcade.View):
         with self.game_cam.activate():
             if self.video_player and not self.video_player.finished:
                 self.video_player.draw(0, 0, VIRTUAL_W, VIRTUAL_H)
+
             elif self.current_scene and hasattr(self.current_scene, "on_draw"):
                 self.current_scene.on_draw()
 
@@ -121,8 +123,15 @@ class MainView(arcade.View):
             if getattr(self.current_scene, 'player_health', 1) <= 0:
                 if getattr(self.current_scene, "name", None) == 1:
                     video_path = os.path.join(os.path.dirname(__file__), "assets", "videos", "scene1.mp4")
+                    audio_path = os.path.join(os.path.dirname(__file__), "assets", "videos", "scene1.mp3")
                     next_scene = getattr(self.current_scene, 'next_scene_module', 'scene2')
-                    self.play_video(video_path, next_scene)
+                    self.play_video(video_path, next_scene, audio_path)
+                    return
+                if getattr(self.current_scene, "name", None) == 2:
+                    video_path = os.path.join(os.path.dirname(__file__), "assets", "videos", "scene2.mp4")
+                    audio_path = os.path.join(os.path.dirname(__file__), "assets", "videos", "scene2.mp3")
+                    next_scene = getattr(self.current_scene, 'next_scene_module', 'scene3')
+                    self.play_video(video_path, next_scene, audio_path)
                     return
 
                 # Other scenes: jump straight to their declared next scene
