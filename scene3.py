@@ -396,10 +396,18 @@ class Scene:
         if self.ending_screen_active:
             endRect = arcade.rect.LRBT(SCREEN_WIDTH // 2, 500, SCREEN_HEIGHT//2, 200)
             arcade.draw_rect_filled(endRect, arcade.color.BLACK)
-            arcade.draw_text("Congratulations!", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+60, arcade.color.WHITE, 28, anchor_x="center")
+            arcade.draw_text("You held the Hero for : ", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+60, arcade.color.WHITE, 28, anchor_x="center")
             if self.ending_time is not None:
-                arcade.draw_text(f"Completion Time: {self.ending_time:.2f} seconds", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+10, arcade.color.LIGHT_GREEN, 20, anchor_x="center")
-            arcade.draw_text("Press ESC to quit", SCREEN_WIDTH//2, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
+                arcade.draw_text(f"{self.ending_time:.2f} seconds", SCREEN_WIDTH//2, SCREEN_HEIGHT//2+10, arcade.color.LIGHT_GREEN, 20, anchor_x="center")
+            message = ""
+            if self.ending_time < 60 :
+                message = "What the hell ?? You didn't even try to held the Hero! Pathetic scum!"
+            elif self.ending_time < 120 : 
+                message = "You managed well, but the Hero still tore you apart... Try to be better next time !"
+            else : 
+                message = "You held the Hero for a long time, the monster kingdom is proud of you!"
+            arcade.draw_text(message , SCREEN_WIDTH//2+30, SCREEN_HEIGHT//2-40, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
+            arcade.draw_text("Press ESC to quit", SCREEN_WIDTH//2, SCREEN_HEIGHT//2-70, arcade.color.LIGHT_GRAY, 16, anchor_x="center")
             return
         if self.tile_map:
             for layer in self.tile_map.sprite_lists.values():
