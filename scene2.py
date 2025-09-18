@@ -24,11 +24,11 @@ KNOCKBACK_FORCE = 3.5
 KNOCKBACK_DISTANCE = 165
 
 # Constante pour le cooldown d'attaque du joueur
-PLAYER_ATTACK_COOLDOWN = 3  # Délai en secondes entre les attaques du joueur
+PLAYER_ATTACK_COOLDOWN = 2  # Délai en secondes entre les attaques du joueur
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
-FOLLOWER_SPEED = 3
+FOLLOWER_SPEED = 3.7
 
 # --- Clignotement ---
 BLINK_HEALTH_THRESHOLD = 5   # si player_health < 5 -> clignoter
@@ -223,8 +223,8 @@ class Scene:
         self.follower_sprite.textures = self.follower_idle_textures
         if self.follower_idle_textures:
             self.follower_sprite.texture = self.follower_idle_textures[0]
-        self.follower_sprite.center_x =  100
-        self.follower_sprite.center_y =  200
+        self.follower_sprite.center_x =  0
+        self.follower_sprite.center_y =  600
         self.follower_sprite.scale = 2.0
         self.follower_sprite.scale_x = -abs(self.follower_sprite.scale_x)
         if self.follower_sprite not in self.player_list:

@@ -58,6 +58,13 @@ class MainView(arcade.View):
             self.current_scene = SceneClass()
             if hasattr(self.current_scene, "setup"):
                 self.current_scene.setup()
+            # (Option) musique de fond de la scène courante
+            if getattr(self.current_scene, 'background_music', None):
+                try:
+                    arcade.play_sound(self.current_scene.background_music, volume=0.2)
+                except Exception:
+                    pass
+            
         except Exception as e:
             print('[MainView] Failed to load scene module', scene_module_name, e)
 
