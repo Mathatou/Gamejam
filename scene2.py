@@ -24,7 +24,7 @@ KNOCKBACK_FORCE = 3.5
 KNOCKBACK_DISTANCE = 165
 
 # Constante pour le cooldown d'attaque du joueur
-PLAYER_ATTACK_COOLDOWN = 3  # Délai en secondes entre les attaques du joueur
+PLAYER_ATTACK_COOLDOWN = 2  # Délai en secondes entre les attaques du joueur
 
 TILE_SCALING = 1.48
 MAP_FILE = "Tileset/Maps/Second_Map.tmx"
