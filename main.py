@@ -155,14 +155,14 @@ class MainView(arcade.View):
     # -------------- inputs --------------
     def on_key_press(self, key, modifiers):
         # Allow skipping the cutscene
-        if self.video_player and not self.video_player.finished:
-            if key in (arcade.key.SPACE, arcade.key.ENTER, arcade.key.ESCAPE):
-                print("⏭️ Cutscene skipped.")
-                next_mod = self.next_scene_after_video
-                self.stop_video()
-                if next_mod:
-                    self.setup_scene(next_mod)
-                return
+        # if self.video_player and not self.video_player.finished:
+        #     if key in (arcade.key.SPACE, arcade.key.ENTER, arcade.key.ESCAPE):
+        #         print("⏭️ Cutscene skipped.")
+        #         next_mod = self.next_scene_after_video
+        #         self.stop_video()
+        #         if next_mod:
+        #             self.setup_scene(next_mod)
+        #         return
 
         if self.current_scene and hasattr(self.current_scene, "on_key_press"):
             self.current_scene.on_key_press(key, modifiers)
@@ -194,7 +194,6 @@ class MainView(arcade.View):
 
 if __name__ == '__main__':
     window = arcade.Window(width=960, height=720, title=SCREEN_TITLE, resizable=True)
-
     from MenuView import MenuView
     window.show_view(MenuView())
 

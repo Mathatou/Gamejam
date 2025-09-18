@@ -2,7 +2,6 @@
 import arcade
 import os
 import time
-from main import MainView
 from main import start_time
 from MenuView import MenuView
 
@@ -22,7 +21,7 @@ FOLLOWER_ATTACK_FRAMES_FOLDER = "assets/sprites/Hero/attack2"
 FIREBALL_SHOOT_FOLDER = "assets/fireballshoot"
 FIREBALL_EXPLODE_FOLDER = "assets/fireballexplode"
 TILE_SCALING = 1.48
-MAP_FILE = "Tileset/Maps/Last_Map.tmx"
+MAP_FILE = "assets/Tileset/Maps/Last_Map.tmx"
 FOLLOWER_SPEED = 1.5
 
 LEADERBOARD_FILE = "leaderboard.txt"
